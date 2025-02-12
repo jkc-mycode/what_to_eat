@@ -3,6 +3,7 @@ import 'dotenv/config';
 import router from './routes/index.js';
 import expressSession from 'express-session';
 import errorHandlerMiddleware from './middlewares/error-handler.js';
+import { prisma } from './utils/prisma.js';
 
 const app = express();
 const PORT = process.env.PORT;
