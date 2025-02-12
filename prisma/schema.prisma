@@ -19,7 +19,7 @@ model User {
   name         String
   email        String   @unique
   password     String?
-  refreshToken String?  @map("refresh_token")
+  refreshToken String?  @map("refresh_token") @db.Text
   department   String
   position     String
   socialId     String?  @map("social_id")

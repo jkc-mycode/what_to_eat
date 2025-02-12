@@ -22,7 +22,7 @@ export const generateToken = async (payload) => {
   if (!user) {
     return res
       .status(HTTP_STATUS.NOT_FOUND)
-      .json({ message: MESSAGE.AUTH.SIGN_IN.NOT_FOUND });
+      .json({ message: MESSAGE.COMMON.NOT_FOUND });
   }
 
   await prisma.user.update({

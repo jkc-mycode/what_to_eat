@@ -4,10 +4,9 @@ import { prisma } from '../utils/prisma.js';
 import { generateToken } from '../utils/generate-token.js';
 import { HTTP_STATUS } from '../constants/http-status.js';
 import { MESSAGE } from '../constants/message.js';
+import { refreshTokenValidator } from '../middlewares/refreshTokenValidator.js';
 
 const router = express.Router();
-
-console.log('TEST');
 
 // 회원가입
 router.post('/sign-up', async (req, res, next) => {
@@ -67,9 +66,14 @@ router.post('/sign-in', async (req, res, next) => {
       where: { email },
     });
     if (!user) {
-      res.status(HTTP_STATUS.NOT_FOUND).json(MESSAGE.AUTH.SIGN_IN.NOT_FOUND);
+      res.status(HTTP_STATUS.NOT_FOUND).json(MESSAGE.COMMON.NOT_FOUND);
     }
     const isValidUser = await bcrypt.compare(password, user.password);
+    if (!isValidUser) {
+      return res
+        .status(HTTP_STATUS.UNAUTHORIZED)
+        .json({ message: MESSAGE.COMMON.UNAUTHORIZED });
+    }
     const payload = { id: user.id };
     const data = await generateToken(payload);
 
@@ -83,8 +87,15 @@ router.post('/sign-in', async (req, res, next) => {
 });
 
 // 로그아웃
-router.post('/sign-out', async (req, res, next) => {
+router.post('/sign-out', refreshTokenValidator, async (req, res, next) => {
   try {
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { refreshToken: null },
+    });
+    return res
+      .status(HTTP_STATUS.OK)
+      .json({ message: MESSAGE.AUTH.SIGN_OUT.SUCCESS });
   } catch (err) {
     console.error(err);
     next(err);
@@ -92,8 +103,13 @@ router.post('/sign-out', async (req, res, next) => {
 });
 
 // 토큰 재발급
-router.post('/refresh', async (req, res, next) => {
+router.post('/refresh', refreshTokenValidator, async (req, res, next) => {
   try {
+    const payload = { id: req.user.id };
+    const data = await generateToken(payload);
+    return res
+      .status(HTTP_STATUS.OK)
+      .json({ message: MESSAGE.AUTH.SIGN_IN.SUCCESS, data });
   } catch (err) {
     console.error(err);
     next(err);
