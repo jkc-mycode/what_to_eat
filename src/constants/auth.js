@@ -1,0 +1,4 @@
+export const AUTH_CONSTANT = {
+  ACCESS_TOKEN_EXPIRED_IN: '12h',
+  REFRESH_TOKEN_EXPIRED_IN: '7d',
+};

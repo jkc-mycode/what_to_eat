@@ -1,10 +1,57 @@
 import express from 'express';
+import bcrypt from 'bcrypt';
+import { prisma } from '../utils/prisma.js';
+import { generateToken } from '../utils/generate-token.js';
+import { HTTP_STATUS } from '../constants/http-status.js';
+import { MESSAGE } from '../constants/message.js';
 
 const router = express.Router();
+
+console.log('TEST');
 
 // 회원가입
 router.post('/sign-up', async (req, res, next) => {
   try {
+    const { name, email, password, passwordCheck, department, position } =
+      req.body;
+
+    const isExistUser = await prisma.user.findFirst({
+      where: { email },
+    });
+
+    if (isExistUser) {
+      res
+        .status(HTTP_STATUS.CONFLICT)
+        .json({ message: MESSAGE.AUTH.SIGN_UP.EMAIL.DUPLICATED });
+    }
+    if (!passwordCheck) {
+      res
+        .status(HTTP_STATUS.BAD_REQUEST)
+        .json({ message: MESSAGE.AUTH.SIGN_UP.PASSWORD.CONFIRM });
+    }
+    if (password != passwordCheck) {
+      res
+        .status(HTTP_STATUS.BAD_REQUEST)
+        .json({ message: MESSAGE.AUTH.SIGN_UP.PASSWORD.NOT_MATCH });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        department,
+        position,
+      },
+      omit: { password: true },
+    });
+
+    return res.status(HTTP_STATUS.CREATED).json({
+      message: MESSAGE.AUTH.SIGN_UP.SUCCESS,
+      data: newUser,
+    });
   } catch (err) {
     console.error(err);
     next(err);
@@ -14,6 +61,21 @@ router.post('/sign-up', async (req, res, next) => {
 // 로그인
 router.post('/sign-in', async (req, res, next) => {
   try {
+    const { email, password } = req.body;
+
+    const user = await prisma.user.findFirst({
+      where: { email },
+    });
+    if (!user) {
+      res.status(HTTP_STATUS.NOT_FOUND).json(MESSAGE.AUTH.SIGN_IN.NOT_FOUND);
+    }
+    const isValidUser = await bcrypt.compare(password, user.password);
+    const payload = { id: user.id };
+    const data = await generateToken(payload);
+
+    return res
+      .status(HTTP_STATUS.OK)
+      .json({ message: MESSAGE.AUTH.SIGN_IN.SUCCESS, data });
   } catch (err) {
     console.error(err);
     next(err);
