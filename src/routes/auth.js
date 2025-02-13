@@ -4,7 +4,7 @@ import { prisma } from '../utils/prisma.js';
 import { generateToken } from '../utils/generate-token.js';
 import { HTTP_STATUS } from '../constants/http-status.js';
 import { MESSAGE } from '../constants/message.js';
-import { refreshTokenValidator } from '../middlewares/refreshTokenValidator.js';
+import { refreshTokenValidator } from '../middlewares/refresh-token-validator.js';
 
 const router = express.Router();
 
@@ -52,7 +52,6 @@ router.post('/sign-up', async (req, res, next) => {
       data: newUser,
     });
   } catch (err) {
-    console.error(err);
     next(err);
   }
 });
@@ -81,7 +80,6 @@ router.post('/sign-in', async (req, res, next) => {
       .status(HTTP_STATUS.OK)
       .json({ message: MESSAGE.AUTH.SIGN_IN.SUCCESS, data });
   } catch (err) {
-    console.error(err);
     next(err);
   }
 });
@@ -97,7 +95,6 @@ router.post('/sign-out', refreshTokenValidator, async (req, res, next) => {
       .status(HTTP_STATUS.OK)
       .json({ message: MESSAGE.AUTH.SIGN_OUT.SUCCESS });
   } catch (err) {
-    console.error(err);
     next(err);
   }
 });
@@ -111,7 +108,6 @@ router.post('/refresh', refreshTokenValidator, async (req, res, next) => {
       .status(HTTP_STATUS.OK)
       .json({ message: MESSAGE.AUTH.SIGN_IN.SUCCESS, data });
   } catch (err) {
-    console.error(err);
     next(err);
   }
 });

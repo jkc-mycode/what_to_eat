@@ -3,10 +3,10 @@ import { prisma } from '../utils/prisma.js';
 import { HTTP_STATUS } from '../constants/http-status.js';
 import { MESSAGE } from '../constants/message.js';
 
-export const accessTokenValidator = async (req, res, next) => {
+export const refreshTokenValidator = async (req, res, next) => {
   try {
     const { authorization } = req.headers;
-    const [tokenType, accessToken] = authorization?.split(' ');
+    const [tokenType, refreshToken] = authorization?.split(' ');
 
     if (tokenType !== 'Bearer') {
       return res
@@ -16,9 +16,8 @@ export const accessTokenValidator = async (req, res, next) => {
 
     let decodedToken;
     try {
-      decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_KEY);
+      decodedToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_KEY);
     } catch (err) {
-      console.error(err);
       if (err.name === 'TokenExpiredError') {
         return res
           .status(HTTP_STATUS.UNAUTHORIZED)
@@ -35,6 +34,12 @@ export const accessTokenValidator = async (req, res, next) => {
       omit: { password: true },
     });
 
+    if (user.refreshToken !== refreshToken) {
+      return res
+        .status(HTTP_STATUS.UNAUTHORIZED)
+        .json({ message: MESSAGE.AUTH.TOKEN.EXPIRED });
+    }
+
     if (!user) {
       return res
         .status(HTTP_STATUS.NOT_FOUND)
@@ -43,7 +48,6 @@ export const accessTokenValidator = async (req, res, next) => {
     req.user = user;
     next();
   } catch (err) {
-    console.error(err);
-    next();
+    next(err);
   }
 };

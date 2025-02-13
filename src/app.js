@@ -4,6 +4,7 @@ import router from './routes/index.js';
 import expressSession from 'express-session';
 import errorHandlerMiddleware from './middlewares/error-handler.js';
 import { prisma } from './utils/prisma.js';
+import passport from 'passport';
 
 const app = express();
 const PORT = process.env.PORT;
@@ -18,8 +19,10 @@ app.use(
     cookie: { secure: false },
   })
 );
-app.use('/api', router);
+app.use(passport.initialize());
+app.use(passport.session());
 
+app.use('/api', router);
 app.get('/', (req, res) => {
   res.send('Hello World!!');
 });

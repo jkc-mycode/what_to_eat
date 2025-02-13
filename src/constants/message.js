@@ -20,6 +20,7 @@ export const MESSAGE = {
     SIGN_IN: {
       NOT_FOUND: '일치하는 회원이 없습니다.',
       SUCCESS: '로그인에 성공했습니다.',
+      FAIL: '로그인에 실패했습니다.',
     },
     SIGN_OUT: {
       SUCCESS: '로그아웃에 성공했습니다.',

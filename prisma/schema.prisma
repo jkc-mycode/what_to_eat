@@ -20,8 +20,8 @@ model User {
   email        String   @unique
   password     String?
   refreshToken String?  @map("refresh_token") @db.Text
-  department   String
-  position     String
+  department   String?
+  position     String?
   socialId     String?  @map("social_id")
   provider     String   @default("LOCAL")
   createdAt    DateTime @default(now()) @map("created_at")
