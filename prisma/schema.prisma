@@ -26,6 +26,55 @@ model User {
   provider     String   @default("LOCAL")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  Post         Post[]
+  Menu         Menu[]
 
   @@map("user")
+}
+
+model Post {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  title       String
+  department  String
+  finalMenuId Int?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  User        User      @relation(fields: [userId], references: [id])
+  Menu        Menu[]
+  Receipt     Receipt[]
+
+  @@map("post")
+}
+
+model Menu {
+  id          Int      @id @default(autoincrement())
+  postId      Int      @map("post_id")
+  userId      Int      @map("user_id")
+  shopName    String
+  foodName    String
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  Post        Post     @relation(fields: [postId], references: [id])
+  User        User     @relation(fields: [userId], references: [id])
+
+  @@map("menu")
+}
+
+model Receipt {
+  id          Int      @id @default(autoincrement())
+  postId      Int      @map("post_id")
+  card        String?
+  mealType    String   @map("meal_type")
+  memberCount Int      @map("member_count")
+  price       Int
+  date        DateTime
+  img         String   @db.Text
+  memo        String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  Post        Post     @relation(fields: [postId], references: [id])
+
+  @@map("receipt")
 }
