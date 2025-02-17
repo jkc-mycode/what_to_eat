@@ -8,12 +8,12 @@ const router = express.Router();
 // 게시물 생성
 router.post('/', async (req, res, next) => {
   try {
-    const { title, department } = req.body;
+    const { title } = req.body;
     const newPost = await prisma.post.create({
       data: {
         userId: req.user.id,
         title,
-        department,
+        department: req.user.department,
       },
     });
 
@@ -88,7 +88,7 @@ router.get('/:id', async (req, res, next) => {
 // 게시물 수정
 router.patch('/:id', async (req, res, next) => {
   try {
-    const { title, department } = req.body;
+    const { title } = req.body;
     const postId = +req.params.id;
     const post = await prisma.post.findFirst({
       where: { id: postId },
@@ -107,7 +107,6 @@ router.patch('/:id', async (req, res, next) => {
 
     const updateData = {
       title: post.title !== title ? title : undefined,
-      department: post.department !== department ? department : undefined,
     };
 
     const updatedPost = await prisma.post.update({

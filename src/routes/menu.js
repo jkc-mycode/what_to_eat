@@ -19,7 +19,7 @@ router.post('/:id/menu', accessTokenValidator, async (req, res, next) => {
         message: MESSAGE.POST.FIND.NOT_FOUND,
       });
     }
-    if (post.department !== user.department) {
+    if (post.department !== req.user.department) {
       return res.status(HTTP_STATUS.FORBIDDEN).json({
         message: MESSAGE.COMMON.FORBIDDEN,
       });
@@ -60,6 +60,11 @@ router.get('/:id/menu', async (req, res, next) => {
         },
       },
     });
+
+    return res.status(HTTP_STATUS.OK).json({
+      message: MESSAGE.MENU.FIND.SUCCESS,
+      data: { menus },
+    });
   } catch (err) {
     next(err);
   }
@@ -84,7 +89,7 @@ router.post('/:id/menu/:menuId', async (req, res, next) => {
 });
 
 // 게시물 메뉴 수정
-router.patch('/:id/menu', async (req, res, next) => {
+router.patch('/:id/menu/:menuId', async (req, res, next) => {
   try {
     console.log();
   } catch (err) {

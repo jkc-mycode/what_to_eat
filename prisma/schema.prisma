@@ -39,6 +39,7 @@ model Post {
   title       String
   department  String
   finalMenuId Int?
+  status      String    @default("IN_PROGRESS")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime?
@@ -53,9 +54,10 @@ model Menu {
   id          Int      @id @default(autoincrement())
   postId      Int      @map("post_id")
   userId      Int      @map("user_id")
-  shopName    String
-  foodName    String
+  shopName    String   @map("shop_name")
+  foodName    String   @map("food_name")
   description String?  @db.Text
+  count       Int      @default(0)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   Post        Post     @relation(fields: [postId], references: [id])

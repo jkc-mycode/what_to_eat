@@ -51,5 +51,9 @@ export const MESSAGE = {
     CREATE: {
       SUCCESS: '메뉴 생성에 성공했습니다.',
     },
+    FIND: {
+      SUCCESS: '메뉴 조회에 성공했습니다.',
+      NOT_FOUND: '조회된 메뉴가 없습니다.',
+    },
   },
 };
