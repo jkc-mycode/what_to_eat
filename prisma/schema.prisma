@@ -15,17 +15,18 @@ datasource db {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   name         String
-  email        String   @unique
+  email        String    @unique
   password     String?
-  refreshToken String?  @map("refresh_token") @db.Text
+  refreshToken String?   @map("refresh_token") @db.Text
   department   String?
   position     String?
-  socialId     String?  @map("social_id")
-  provider     String   @default("LOCAL")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  socialId     String?   @map("social_id")
+  provider     String    @default("LOCAL")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime?
   Post         Post[]
   Menu         Menu[]
 
@@ -40,6 +41,7 @@ model Post {
   finalMenuId Int?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime?
   User        User      @relation(fields: [userId], references: [id])
   Menu        Menu[]
   Receipt     Receipt[]

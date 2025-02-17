@@ -2,6 +2,7 @@ export const MESSAGE = {
   COMMON: {
     NOT_FOUND: '일치하는 회원이 없습니다.',
     UNAUTHORIZED: '인증정보가 유효하지 않습니다.',
+    FORBIDDEN: '권한이 없습니다.',
   },
   ERROR_HANDLER: {
     ETC: '예상치 못한 에러가 발생했습니다. 관리자에게 문의해 주세요.',
@@ -31,5 +32,24 @@ export const MESSAGE = {
     },
   },
   USER: {},
-  POST: {},
+  POST: {
+    CREATE: {
+      SUCCESS: '게시물 생성에 성공했습니다.',
+    },
+    FIND: {
+      SUCCESS: '게시물 조회에 성공했습니다.',
+      NOT_FOUND: '조회된 게시물이 없습니다.',
+    },
+    UPDATE: {
+      SUCCESS: '게시물 수정에 성공했습니다.',
+    },
+    DELETE: {
+      SUCCESS: '게시물 삭제에 성공했습니다.',
+    },
+  },
+  MENU: {
+    CREATE: {
+      SUCCESS: '메뉴 생성에 성공했습니다.',
+    },
+  },
 };
