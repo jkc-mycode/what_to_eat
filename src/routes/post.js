@@ -142,8 +142,9 @@ router.delete('/:id', async (req, res, next) => {
       });
     }
 
-    await prisma.post.delete({
+    await prisma.post.update({
       where: { id: postId },
+      data: { deletedAt: new Date() },
     });
 
     return res.status(HTTP_STATUS.OK).json({

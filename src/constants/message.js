@@ -55,5 +55,19 @@ export const MESSAGE = {
       SUCCESS: '메뉴 조회에 성공했습니다.',
       NOT_FOUND: '조회된 메뉴가 없습니다.',
     },
+    VOTE: {
+      SUCCESS: '메뉴 투표에 성공했습니다.',
+      DUPLICATED: '이미 투표했습니다.',
+    },
+    VOTE_CANCEL: {
+      SUCCESS: '메뉴 투표 취소에 성공했습니다.',
+      FAIL: '투표 취소할 수 없습니다.',
+    },
+    UPDATE: {
+      SUCCESS: '메뉴 수정에 성공했습니다.',
+    },
+    DELETE: {
+      SUCCESS: '메뉴 삭제에 성공했습니다.',
+    },
   },
 };

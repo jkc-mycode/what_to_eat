@@ -15,20 +15,21 @@ datasource db {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
+  id           Int           @id @default(autoincrement())
   name         String
-  email        String    @unique
+  email        String        @unique
   password     String?
-  refreshToken String?   @map("refresh_token") @db.Text
+  refreshToken String?       @map("refresh_token") @db.Text
   department   String?
   position     String?
-  socialId     String?   @map("social_id")
-  provider     String    @default("LOCAL")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  socialId     String?       @map("social_id")
+  provider     String        @default("LOCAL")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
   deletedAt    DateTime?
   Post         Post[]
   Menu         Menu[]
+  VoteHistory  VoteHistory[]
 
   @@map("user")
 }
@@ -42,7 +43,7 @@ model Post {
   status      String    @default("IN_PROGRESS")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime?
+  deletedAt   DateTime? @map("deleted_at")
   User        User      @relation(fields: [userId], references: [id])
   Menu        Menu[]
   Receipt     Receipt[]
@@ -51,19 +52,34 @@ model Post {
 }
 
 model Menu {
-  id          Int      @id @default(autoincrement())
-  postId      Int      @map("post_id")
-  userId      Int      @map("user_id")
-  shopName    String   @map("shop_name")
-  foodName    String   @map("food_name")
-  description String?  @db.Text
-  count       Int      @default(0)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  Post        Post     @relation(fields: [postId], references: [id])
-  User        User     @relation(fields: [userId], references: [id])
+  id          Int           @id @default(autoincrement())
+  postId      Int           @map("post_id")
+  userId      Int           @map("user_id")
+  shopName    String        @map("shop_name")
+  foodName    String        @map("food_name")
+  description String?       @db.Text
+  count       Int           @default(0)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  deletedAt   DateTime?     @map("deleted_at")
+  VoteHistory VoteHistory[]
+  Post        Post          @relation(fields: [postId], references: [id])
+  User        User          @relation(fields: [userId], references: [id])
 
   @@map("menu")
+}
+
+model VoteHistory {
+  id         Int      @id @default(autoincrement())
+  menuId     Int      @map("menu_id")
+  userId     Int      @map("user_id")
+  isCanceled Boolean  @default(false) @map("is_canceled")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  Menu       Menu     @relation(fields: [menuId], references: [id])
+  User       User     @relation(fields: [userId], references: [id])
+
+  @@map("voteHistory")
 }
 
 model Receipt {
