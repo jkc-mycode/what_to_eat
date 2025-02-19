@@ -5,7 +5,6 @@ import { prisma } from '../utils/prisma.js';
 export const postCheck = (menu = null, receipt = null) => {
   return async (req, res, next) => {
     try {
-      console.log(req.params);
       const postId = +req.params.id;
       const post = await prisma.post.findFirst({
         where: { id: postId, deletedAt: null },

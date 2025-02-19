@@ -56,11 +56,6 @@ router.get('/', async (req, res, next) => {
 router.get('/:id', postCheck(true, true), async (req, res, next) => {
   try {
     const post = req.post;
-    if (!post) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({
-        message: MESSAGE.POST.FIND.NOT_FOUND,
-      });
-    }
 
     return res.status(HTTP_STATUS.OK).json({
       message: MESSAGE.POST.FIND.SUCCESS,

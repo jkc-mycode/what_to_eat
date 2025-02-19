@@ -3,22 +3,20 @@ import { prisma } from '../utils/prisma.js';
 import { accessTokenValidator } from '../middlewares/access-token-validator.js';
 import { HTTP_STATUS } from '../constants/http-status.js';
 import { MESSAGE } from '../constants/message.js';
+import { postCheck } from '../middlewares/post-check.js';
+import { menuCheck } from '../middlewares/menu-check.js';
 
 const router = express.Router();
+
+router.use('/:id/menu', postCheck());
+router.use('/:id/menu/:menuId', menuCheck());
 
 // 메뉴(후보) 추가
 router.post('/:id/menu', accessTokenValidator, async (req, res, next) => {
   try {
-    const postId = +req.params.id;
     const { shopName, foodName, description } = req.body;
-    const post = await prisma.post.findFirst({
-      where: { id: postId },
-    });
-    if (!post) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({
-        message: MESSAGE.POST.FIND.NOT_FOUND,
-      });
-    }
+    const post = req.post;
+
     if (post.department !== req.user.department) {
       return res.status(HTTP_STATUS.FORBIDDEN).json({
         message: MESSAGE.COMMON.FORBIDDEN,
@@ -27,7 +25,7 @@ router.post('/:id/menu', accessTokenValidator, async (req, res, next) => {
 
     const newMenu = await prisma.menu.create({
       data: {
-        postId,
+        postId: post.id,
         userId: +req.user.id,
         shopName,
         foodName,
@@ -47,9 +45,9 @@ router.post('/:id/menu', accessTokenValidator, async (req, res, next) => {
 // 메뉴 목록 조회
 router.get('/:id/menu', async (req, res, next) => {
   try {
-    const postId = +req.params.id;
+    const post = req.post;
     const menus = await prisma.menu.findMany({
-      where: { postId, deletedAt: null },
+      where: { postId: post.id, deletedAt: null },
       orderBy: { createdAt: 'desc' },
       include: {
         User: {
@@ -71,17 +69,10 @@ router.get('/:id/menu', async (req, res, next) => {
 });
 
 // 메뉴 상세 조회
-router.get('/:id/menu/:menuId', async (req, res, next) => {
+router.get('/:id/menu/:menuId', menuCheck(true), async (req, res, next) => {
   try {
-    const menuId = +req.params.menuId;
-    const menu = await prisma.menu.findFirst({
-      where: { id: menuId, deletedAt: null },
-    });
-    if (!menu) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({
-        message: MESSAGE.MENU.FIND.NOT_FOUND,
-      });
-    }
+    const menu = req.menu;
+
     return res.status(HTTP_STATUS.OK).json({
       message: MESSAGE.MENU.FIND.SUCCESS,
       data: { menu },
@@ -94,19 +85,11 @@ router.get('/:id/menu/:menuId', async (req, res, next) => {
 // 메뉴 투표
 router.post('/:id/menu/:menuId/vote', async (req, res, next) => {
   try {
-    const menuId = +req.params.menuId;
-    const menu = await prisma.menu.findFirst({
-      where: { id: menuId, deletedAt: null },
-    });
-    if (!menu) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({
-        message: MESSAGE.MENU.FIND.NOT_FOUND,
-      });
-    }
+    const menu = req.menu;
     const voteHistory = await prisma.voteHistory.findFirst({
       where: {
         userId: req.user.id,
-        menuId,
+        menuId: menu.id,
         isCanceled: false,
       },
     });
@@ -119,12 +102,12 @@ router.post('/:id/menu/:menuId/vote', async (req, res, next) => {
       await prisma.voteHistory.create({
         data: {
           userId: req.user.id,
-          menuId,
+          menuId: menu.id,
         },
       });
 
       await prisma.menu.update({
-        where: { id: menuId },
+        where: { id: menu.id },
         data: {
           count: {
             increment: 1,
@@ -144,11 +127,11 @@ router.post('/:id/menu/:menuId/vote', async (req, res, next) => {
 // 메뉴 투표 취소
 router.post('/:id/menu/:menuId/cancel', async (req, res, next) => {
   try {
-    const menuId = +req.params.menuId;
+    const menu = req.menu;
     const voteHistory = await prisma.voteHistory.findFirst({
       where: {
         userId: req.user.id,
-        menuId,
+        menuId: menu.id,
         isCanceled: false,
       },
     });
@@ -158,18 +141,10 @@ router.post('/:id/menu/:menuId/cancel', async (req, res, next) => {
       });
     }
 
-    const menu = await prisma.menu.findFirst({
-      where: { id: menuId, deletedAt: null },
-    });
-    if (!menu) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({
-        message: MESSAGE.MENU.FIND.NOT_FOUND,
-      });
-    }
     if (menu.count > 0) {
       await prisma.$transaction(async (prisma) => {
         await prisma.menu.update({
-          where: { id: menuId },
+          where: { id: menu.id },
           data: {
             count: {
               decrement: 1,
@@ -200,14 +175,7 @@ router.post('/:id/menu/:menuId/cancel', async (req, res, next) => {
 router.patch('/:id/menu/:menuId', async (req, res, next) => {
   try {
     const { shopName, foodName, description } = req.body;
-    const menu = await prisma.menu.findFirst({
-      where: { id: +req.params.menuId, deletedAt: null },
-    });
-    if (!menu) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({
-        message: MESSAGE.MENU.FIND.NOT_FOUND,
-      });
-    }
+    const menu = req.menu;
 
     if (menu.userId !== req.user.id) {
       return res.status(HTTP_STATUS.FORBIDDEN).json({
@@ -216,7 +184,7 @@ router.patch('/:id/menu/:menuId', async (req, res, next) => {
     }
     const updatedMenu = await prisma.menu.update({
       where: {
-        id: +req.params.menuId,
+        id: menu.id,
       },
       data: {
         shopName,
@@ -237,17 +205,9 @@ router.patch('/:id/menu/:menuId', async (req, res, next) => {
 // 게시물 메뉴 삭제
 router.delete('/:id/menu/:menuId', async (req, res, next) => {
   try {
-    const menuId = +req.params.menuId;
-    const menu = await prisma.menu.findFirst({
-      where: { id: menuId, deletedAt: null },
-    });
-    if (!menu) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({
-        message: MESSAGE.MENU.FIND.NOT_FOUND,
-      });
-    }
+    const menu = req.menu;
     await prisma.menu.update({
-      where: { id: menuId },
+      where: { id: menu.id },
       data: { deletedAt: new Date() },
     });
 
