@@ -46,7 +46,7 @@ model Post {
   deletedAt   DateTime? @map("deleted_at")
   User        User      @relation(fields: [userId], references: [id])
   Menu        Menu[]
-  Receipt     Receipt[]
+  Receipt     Receipt?
 
   @@map("post")
 }
@@ -83,18 +83,19 @@ model VoteHistory {
 }
 
 model Receipt {
-  id          Int      @id @default(autoincrement())
-  postId      Int      @map("post_id")
+  id          Int       @id @default(autoincrement())
+  postId      Int       @unique @map("post_id")
   card        String?
-  mealType    String   @map("meal_type")
-  memberCount Int      @map("member_count")
+  mealType    String    @map("meal_type")
+  memberCount Int       @map("member_count")
   price       Int
   date        DateTime
-  img         String   @db.Text
-  memo        String   @db.Text
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  Post        Post     @relation(fields: [postId], references: [id])
+  img         String    @db.Text
+  memo        String    @db.Text
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  Post        Post      @relation(fields: [postId], references: [id])
 
   @@map("receipt")
 }

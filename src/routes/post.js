@@ -2,6 +2,7 @@ import express from 'express';
 import { prisma } from '../utils/prisma.js';
 import { HTTP_STATUS } from '../constants/http-status.js';
 import { MESSAGE } from '../constants/message.js';
+import { postCheck } from '../middlewares/post-check.js';
 
 const router = express.Router();
 
@@ -52,30 +53,15 @@ router.get('/', async (req, res, next) => {
 });
 
 // 게시물 상세 조회
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', postCheck(true, true), async (req, res, next) => {
   try {
-    const post = await prisma.post.findFirst({
-      where: { id: +req.params.id },
-      include: {
-        User: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            position: true,
-            deletedAt: true,
-          },
-        },
-        Menu: true,
-        Receipt: true,
-      },
-    });
+    const post = req.post;
     if (!post) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         message: MESSAGE.POST.FIND.NOT_FOUND,
       });
     }
-    console.log(post);
+
     return res.status(HTTP_STATUS.OK).json({
       message: MESSAGE.POST.FIND.SUCCESS,
       data: { post },
@@ -86,19 +72,11 @@ router.get('/:id', async (req, res, next) => {
 });
 
 // 게시물 수정
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', postCheck(), async (req, res, next) => {
   try {
     const { title } = req.body;
-    const postId = +req.params.id;
-    const post = await prisma.post.findFirst({
-      where: { id: postId },
-      include: { User: true },
-    });
-    if (!post) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({
-        message: MESSAGE.POST.FIND.NOT_FOUND,
-      });
-    }
+    const post = req.post;
+
     if (post.User.id !== req.user.id) {
       return res.status(HTTP_STATUS.FORBIDDEN).json({
         message: MESSAGE.COMMON.FORBIDDEN,
@@ -110,7 +88,7 @@ router.patch('/:id', async (req, res, next) => {
     };
 
     const updatedPost = await prisma.post.update({
-      where: { id: postId },
+      where: { id: post.id },
       data: updateData,
     });
 
@@ -124,18 +102,10 @@ router.patch('/:id', async (req, res, next) => {
 });
 
 // 게시물 삭제
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', postCheck(), async (req, res, next) => {
   try {
-    const postId = +req.params.id;
-    const post = await prisma.post.findFirst({
-      where: { id: postId },
-      include: { User: true },
-    });
-    if (!post) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({
-        message: MESSAGE.POST.FIND.NOT_FOUND,
-      });
-    }
+    const post = req.post;
+
     if (post.User.id !== req.user.id) {
       return res.status(HTTP_STATUS.FORBIDDEN).json({
         message: MESSAGE.COMMON.FORBIDDEN,
@@ -143,7 +113,7 @@ router.delete('/:id', async (req, res, next) => {
     }
 
     await prisma.post.update({
-      where: { id: postId },
+      where: { id: post.id },
       data: { deletedAt: new Date() },
     });
 
