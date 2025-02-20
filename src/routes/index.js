@@ -11,7 +11,10 @@ const router = express.Router();
 
 router.use('/auth', [authRouter, authPassportRouter]);
 router.use('/user', userRouter);
-router.use('/post', accessTokenValidator, [postRouter, menuRouter]);
-router.use('/receipt', accessTokenValidator, receiptRouter);
+router.use('/post', accessTokenValidator, [
+  postRouter,
+  menuRouter,
+  receiptRouter,
+]);
 
 export default router;

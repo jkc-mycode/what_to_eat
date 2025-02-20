@@ -39,6 +39,7 @@ export const MESSAGE = {
     FIND: {
       SUCCESS: '게시물 조회에 성공했습니다.',
       NOT_FOUND: '조회된 게시물이 없습니다.',
+      NOT_COMPLETED: '게시물이 종료되지 않았습니다.',
     },
     UPDATE: {
       SUCCESS: '게시물 수정에 성공했습니다.',

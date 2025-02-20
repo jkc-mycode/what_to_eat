@@ -36,11 +36,11 @@ export const uploadImage = multer({
       // 확장자 검사
       const extension = path.extname(file.originalname).toLowerCase();
       if (!allowedExtensions.includes(extension)) {
-        return callback(new Error('확장자 에러'));
+        return cb(new Error('확장자 에러'));
       }
 
       // folder라는 파일 내부에 업로드한 사용자에 따라 임의의 파일명으로 저장
-      callback(null, `test/${userId}_${date}_${randomNumber}`);
+      cb(null, `test/${userId}_${date}_${randomNumber}`);
     },
     acl: 'public-read-write',
   }),

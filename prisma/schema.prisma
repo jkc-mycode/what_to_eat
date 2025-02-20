@@ -37,6 +37,7 @@ model User {
 model Post {
   id          Int       @id @default(autoincrement())
   userId      Int       @map("user_id")
+  receiptId   Int?      @unique @map("receipt_id")
   title       String
   department  String
   finalMenuId Int?
