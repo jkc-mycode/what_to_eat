@@ -6,6 +6,8 @@ import { postCheck } from '../middlewares/post-check.js';
 
 const router = express.Router();
 
+router.use('/:id', postCheck());
+
 // 게시물 생성
 router.post('/', async (req, res, next) => {
   try {
@@ -67,7 +69,7 @@ router.get('/:id', postCheck(true, true), async (req, res, next) => {
 });
 
 // 게시물 수정
-router.patch('/:id', postCheck(), async (req, res, next) => {
+router.patch('/:id', async (req, res, next) => {
   try {
     const { title } = req.body;
     const post = req.post;
@@ -97,7 +99,7 @@ router.patch('/:id', postCheck(), async (req, res, next) => {
 });
 
 // 게시물 삭제
-router.delete('/:id', postCheck(), async (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const post = req.post;
 
@@ -119,5 +121,26 @@ router.delete('/:id', postCheck(), async (req, res, next) => {
     next(err);
   }
 });
+
+// 메뉴 확정
+router.post(
+  '/:id/confirm-menu',
+  postCheck(true, true),
+  async (req, res, next) => {
+    try {
+      const post = req.post;
+      await prisma.post.update({
+        where: { id: post.id },
+        data: { status: 'COMPLETED' },
+      });
+
+      return res.status(HTTP_STATUS.CREATED).json({
+        message: MESSAGE.MENU.VOTE.COMPLETE,
+      });
+    } catch (err) {
+      next();
+    }
+  }
+);
 
 export default router;

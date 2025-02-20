@@ -86,6 +86,14 @@ router.get('/:id/menu/:menuId', menuCheck(true), async (req, res, next) => {
 router.post('/:id/menu/:menuId/vote', async (req, res, next) => {
   try {
     const menu = req.menu;
+    const post = req.post;
+
+    if (post.finalMenuId) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        message: MESSAGE.MENU.VOTE.FAIL,
+      });
+    }
+
     const voteHistory = await prisma.voteHistory.findFirst({
       where: {
         userId: req.user.id,
@@ -128,6 +136,14 @@ router.post('/:id/menu/:menuId/vote', async (req, res, next) => {
 router.post('/:id/menu/:menuId/cancel', async (req, res, next) => {
   try {
     const menu = req.menu;
+    const post = req.post;
+
+    if (post.status !== 'IN_PROGRESS') {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        message: MESSAGE.MENU.VOTE.FAIL,
+      });
+    }
+
     const voteHistory = await prisma.voteHistory.findFirst({
       where: {
         userId: req.user.id,

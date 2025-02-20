@@ -58,6 +58,8 @@ export const MESSAGE = {
     VOTE: {
       SUCCESS: '메뉴 투표에 성공했습니다.',
       DUPLICATED: '이미 투표했습니다.',
+      FAIL: '투표를 진행할 수 없습니다.',
+      COMPLETE: '투표를 종료합니다.',
     },
     VOTE_CANCEL: {
       SUCCESS: '메뉴 투표 취소에 성공했습니다.',
