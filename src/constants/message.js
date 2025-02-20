@@ -72,4 +72,9 @@ export const MESSAGE = {
       SUCCESS: '메뉴 삭제에 성공했습니다.',
     },
   },
+  RECEIPT: {
+    CREATE: {
+      SUCCESS: '영수증 생성에 성공했습니다.',
+    },
+  },
 };
