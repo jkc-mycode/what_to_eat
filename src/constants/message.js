@@ -77,5 +77,12 @@ export const MESSAGE = {
     CREATE: {
       SUCCESS: '영수증 생성에 성공했습니다.',
     },
+    FIND: {
+      SUCCESS: '영수증 조회에 성공했습니다.',
+      NOT_FOUND: '조회된 영수증이 없습니다.',
+    },
+    UPDATE: {
+      SUCCESS: '영수증 수정에 성공했습니다.',
+    },
   },
 };
