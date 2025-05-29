@@ -1,35 +1,32 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+
+dotenv.config();
+
+import { errorHandlerMiddleware } from './middlewares/error-handler.middleware';
+import { prisma } from './utils/prisma.util';
 
 const app = express();
-const port = process.env.PORT || 3001;
+const SERVER_PORT = process.env.SERVER_PORT || 3000;
 
 // 미들웨어
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
-// 타입 정의
-interface Food {
-  id: number;
-  name: string;
-  category: string;
-}
-
-// 임시 데이터
-const foods: Food[] = [
-  { id: 1, name: '김치찌개', category: '한식' },
-  { id: 2, name: '피자', category: '양식' },
-  { id: 3, name: '초밥', category: '일식' },
-];
-
-// 라우트
-app.get('/api/foods', (req: Request, res: Response) => {
-  res.json({
-    success: true,
-    data: foods,
-  });
+// 라우트 정의
+app.get('/', (req: Request, res: Response) => {
+  res.json({ message: 'API 서버가 실행 중입니다.' });
 });
 
-app.listen(port, () => {
-  console.log(`서버가 포트 ${port}에서 실행 중입니다`);
+console.log('DB 연결 테스트 시작...');
+prisma.$queryRaw`SELECT 1`;
+
+// 에러 처리 미들웨어 등록
+app.use(errorHandlerMiddleware);
+
+app.listen(SERVER_PORT, () => {
+  console.log(`서버가 포트 ${SERVER_PORT}에서 실행 중입니다`);
 });
