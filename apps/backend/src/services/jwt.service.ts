@@ -15,9 +15,7 @@ export class JwtService {
     this.expiresIn = process.env.JWT_EXPIRES_IN || '7d';
   }
 
-  /**
-   * JWT 토큰 생성
-   */
+  // JWT 토큰 생성
   generateToken(userId: string): string {
     const payload: JwtPayload = { id: userId };
 
@@ -28,9 +26,7 @@ export class JwtService {
     return jwt.sign(payload, this.secret, options);
   }
 
-  /**
-   * JWT 토큰 검증
-   */
+  // JWT 토큰 검증
   verifyToken(token: string): JwtPayload {
     try {
       return jwt.verify(token, this.secret) as JwtPayload;
@@ -39,17 +35,13 @@ export class JwtService {
     }
   }
 
-  /**
-   * 토큰에서 사용자 ID 추출
-   */
+  // 토큰에서 사용자 ID 추출
   extractUserId(token: string): string {
     const payload = this.verifyToken(token);
     return payload.id;
   }
 
-  /**
-   * 토큰 만료 시간 확인
-   */
+  // 토큰 만료 시간 확인
   isTokenExpired(token: string): boolean {
     try {
       const payload = this.verifyToken(token);
@@ -62,9 +54,7 @@ export class JwtService {
     }
   }
 
-  /**
-   * Authorization 헤더에서 토큰 추출
-   */
+  // Authorization 헤더에서 토큰 추출
   extractTokenFromHeader(authHeader?: string): string | null {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return null;
