@@ -7,6 +7,8 @@ dotenv.config();
 
 import { errorHandlerMiddleware } from './middlewares/error-handler.middleware';
 import { prisma } from './utils/prisma.util';
+import './config/passport.config'; // Passport 설정 초기화
+import authRoutes from './routes/auth.routes';
 
 const app = express();
 const SERVER_PORT = process.env.SERVER_PORT || 3000;
@@ -20,6 +22,9 @@ app.use(cookieParser());
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'API 서버가 실행 중입니다.' });
 });
+
+// 인증 라우트
+app.use('/api/auth', authRoutes);
 
 console.log('DB 연결 테스트 시작...');
 prisma.$queryRaw`SELECT 1`;
