@@ -108,6 +108,38 @@ export class AuthController {
     })(req, res, next);
   };
 
+  // 카카오 OAuth 콜백 처리
+  kakaoCallback = (req: Request, res: Response, next: NextFunction): void => {
+    try {
+      const user = req.user as any;
+
+      if (!user) {
+        const errorResponse: ErrorResponseDTO = {
+          success: false,
+          message: '로그인에 실패했습니다.',
+        };
+        res.status(401).json(errorResponse);
+        return;
+      }
+
+      // JWT 토큰 생성
+      const token = this.jwtService.generateToken(user.id);
+
+      res.json({ token });
+    } catch (error) {
+      console.error('카카오 콜백 처리 에러:', error);
+      if (error instanceof Error) {
+        const errorResponse: ErrorResponseDTO = {
+          success: false,
+          message: error.message,
+        };
+        res.status(400).json(errorResponse);
+        return;
+      }
+      next(error);
+    }
+  };
+
   // 사용자 정보 조회
   getProfile = async (
     req: AuthenticatedRequest,
