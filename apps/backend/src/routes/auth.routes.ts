@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
-import { authenticateJWT } from '../middlewares/auth.middleware';
+import { authenticateJWT, authenticateRefreshToken } from '../middlewares/auth.middleware';
 import { AuthenticatedRequest } from '../types/auth.types';
 import { AuthService } from '../services/auth.service';
 import { JwtService } from '../services/jwt.service';
@@ -22,26 +22,30 @@ router.get('/kakao', passport.authenticate('kakao'));
 router.get(
   '/kakao/callback',
   passport.authenticate('kakao', {
-    failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/login?error=kakao_failed`,
+    failureRedirect: '/login?error=kakao_failed',
     session: false,
   }),
   authController.kakaoCallback
 );
 
-// 로그아웃
-router.post('/signout', authController.signOut);
+// 로그아웃 (Access Token 필요)
+router.post('/signout', authenticateJWT, authController.signOut as any);
 
-// 사용자 프로필 조회 (인증 필요)
+// 토큰 갱신 (Refresh Token 필요)
+router.post('/refresh', authenticateRefreshToken, authController.refreshToken);
+
+// 사용자 프로필 조회 (Access Token 필요)
 router.get('/profile', authenticateJWT, authController.getProfile as any);
 
-// 토큰 유효성 검증
+// 토큰 유효성 검증 (Access Token 필요)
 router.get('/verify', authenticateJWT, (req, res) => {
   const authReq = req as AuthenticatedRequest;
   res.json({
     success: true,
-    message: '유효한 토큰입니다.',
+    message: '유효한 Access Token입니다.',
     data: {
       user: authReq.user,
+      tokenType: 'access',
     },
   });
 });

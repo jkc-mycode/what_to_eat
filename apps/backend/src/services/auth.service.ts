@@ -35,13 +35,11 @@ export class AuthService {
   }
 
   // 사용자 정보 조회
-  async getUserById(id: string): Promise<UserEntity> {
+  async getUserById(id: string): Promise<any> {
     const user = await prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        email: true,
-        createdAt: true,
+      omit: {
+        password: true,
       },
     });
 

@@ -17,6 +17,10 @@ passport.use(
         // 사용자 찾기
         const user = await prisma.user.findUnique({
           where: { email },
+          omit: {
+            refreshToken: true,
+            refreshTokenExpiresAt: true,
+          },
         });
 
         if (!user) {
@@ -57,6 +61,11 @@ passport.use(
         // 기존 사용자 찾기 (카카오 ID로)
         let user = await prisma.user.findUnique({
           where: { socialId: String(kakaoId) },
+          omit: {
+            password: true,
+            refreshToken: true,
+            refreshTokenExpiresAt: true,
+          },
         });
 
         if (user) {
@@ -68,6 +77,10 @@ passport.use(
         if (email) {
           const existingUser = await prisma.user.findUnique({
             where: { email },
+            omit: {
+              refreshToken: true,
+              refreshTokenExpiresAt: true,
+            },
           });
 
           if (existingUser) {
@@ -75,6 +88,11 @@ passport.use(
             user = await prisma.user.update({
               where: { email },
               data: { socialId: String(kakaoId) },
+              omit: {
+                password: true,
+                refreshToken: true,
+                refreshTokenExpiresAt: true,
+              },
             });
             return done(null, user);
           }
@@ -87,6 +105,11 @@ passport.use(
             password: '',
             nickname: nickname || `카카오사용자${kakaoId}`,
             socialId: String(kakaoId),
+          },
+          omit: {
+            password: true,
+            refreshToken: true,
+            refreshTokenExpiresAt: true,
           },
         });
 
@@ -104,18 +127,33 @@ passport.use(
   new JWTStrategy(
     {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: process.env.JWT_SECRET || 'your-secret-key',
+      secretOrKey: process.env.JWT_ACCESS_SECRET || 'your-secret-key',
     },
     async (payload, done) => {
       try {
+        if (payload.type !== 'access') {
+          return done(null, false, { message: 'Access Token이 필요합니다.' });
+        }
+
+        const currentTime = Math.floor(Date.now() / 1000);
+        if (payload.exp && payload.exp < currentTime) {
+          return done(null, false, { message: '만료된 토큰입니다.' });
+        }
+
         const user = await prisma.user.findUnique({
           where: { id: payload.id },
+          select: {
+            id: true,
+            email: true,
+            nickname: true,
+            createdAt: true,
+          },
         });
 
         if (user) {
           return done(null, user);
         } else {
-          return done(null, false);
+          return done(null, false, { message: '사용자를 찾을 수 없습니다.' });
         }
       } catch (error) {
         return done(error, false);
@@ -133,6 +171,11 @@ passport.deserializeUser(async (id: string, done) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: id },
+      omit: {
+        password: true,
+        refreshToken: true,
+        refreshTokenExpiresAt: true,
+      },
     });
     done(null, user);
   } catch (error) {

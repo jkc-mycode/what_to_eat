@@ -76,8 +76,8 @@ export class AuthController {
   };
 
   // Passport Local Strategy를 사용한 로그인
-  signInWithPassport = (req: Request, res: Response, next: NextFunction): void => {
-    passport.authenticate('local', (error: any, user: any, info: any) => {
+  signInWithPassport = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    passport.authenticate('local', async (error: any, user: any, info: any) => {
       if (error) {
         return next(error);
       }
@@ -91,25 +91,30 @@ export class AuthController {
         return;
       }
 
-      // JWT 토큰 생성 (JwtService 통해서)
-      const token = this.jwtService.generateToken(user.id);
+      try {
+        // JWT 토큰 생성 (JwtService 통해서)
+        const { accessToken, refreshToken } = await this.jwtService.generateTokens(user.id);
 
-      const { password: _, ...userWithoutPassword } = user;
+        const { password: _, ...userWithoutPassword } = user;
 
-      const successResponse: ApiResponse<AuthResponseDTO> = {
-        success: true,
-        message: '로그인이 완료되었습니다.',
-        data: {
-          user: userWithoutPassword,
-          token,
-        },
-      };
-      res.json(successResponse);
+        const successResponse: ApiResponse<AuthResponseDTO> = {
+          success: true,
+          message: '로그인이 완료되었습니다.',
+          data: {
+            user: userWithoutPassword,
+            accessToken,
+            refreshToken,
+          },
+        };
+        res.json(successResponse);
+      } catch (error) {
+        next(error);
+      }
     })(req, res, next);
   };
 
   // 카카오 OAuth 콜백 처리
-  kakaoCallback = (req: Request, res: Response, next: NextFunction): void => {
+  kakaoCallback = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user as any;
 
@@ -122,10 +127,10 @@ export class AuthController {
         return;
       }
 
-      // JWT 토큰 생성
-      const token = this.jwtService.generateToken(user.id);
+      // JWT 토큰 생성 (JwtService 통해서)
+      const { accessToken, refreshToken } = await this.jwtService.generateTokens(user.id);
 
-      res.json({ token });
+      res.json({ accessToken, refreshToken });
     } catch (error) {
       console.error('카카오 콜백 처리 에러:', error);
       if (error instanceof Error) {
@@ -134,6 +139,35 @@ export class AuthController {
           message: error.message,
         };
         res.status(400).json(errorResponse);
+        return;
+      }
+      next(error);
+    }
+  };
+
+  // 토큰 재발급
+  refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user as any;
+      // 새로운 토큰 쌍 생성
+      const tokens = await this.jwtService.generateTokens(user.id);
+
+      const successResponse: ApiResponse = {
+        success: true,
+        message: '토큰이 갱신되었습니다.',
+        data: {
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+        },
+      };
+      res.json(successResponse);
+    } catch (error) {
+      if (error instanceof Error) {
+        const errorResponse: ErrorResponseDTO = {
+          success: false,
+          message: error.message,
+        };
+        res.status(401).json(errorResponse);
         return;
       }
       next(error);
@@ -151,9 +185,11 @@ export class AuthController {
 
       const user = await this.authService.getUserById(userId);
 
+      const { refreshToken, refreshTokenExpiresAt, ...userWithoutRefreshToken } = user;
+
       const successResponse: ApiResponse = {
         success: true,
-        data: { user },
+        data: { user: userWithoutRefreshToken },
       };
       res.json(successResponse);
     } catch (error) {
@@ -169,12 +205,61 @@ export class AuthController {
     }
   };
 
-  // 로그아웃 (추후 Redis 연동 시 사용)
-  signOut = (req: Request, res: Response): void => {
-    const successResponse: ApiResponse = {
-      success: true,
-      message: '로그아웃이 완료되었습니다.',
-    };
-    res.json(successResponse);
+  // 로그아웃 (Access Token으로 사용자 확인)
+  signOut = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        const errorResponse: ErrorResponseDTO = {
+          success: false,
+          message: '유효한 사용자 정보를 찾을 수 없습니다.',
+        };
+        res.status(400).json(errorResponse);
+        return;
+      }
+
+      // 사용자 조회 (리프레시 토큰 상태 확인)
+      const user = await this.authService.getUserById(userId);
+      if (!user) {
+        const errorResponse: ErrorResponseDTO = {
+          success: false,
+          message: '사용자를 찾을 수 없습니다.',
+        };
+        res.status(404).json(errorResponse);
+        return;
+      }
+
+      console.log(user);
+
+      // 이미 로그아웃된 상태인지 확인
+      if (!user.refreshToken) {
+        const errorResponse: ErrorResponseDTO = {
+          success: false,
+          message: '이미 로그아웃되어 있습니다.',
+        };
+        res.status(400).json(errorResponse);
+        return;
+      }
+
+      // 리프레시 토큰 무효화
+      await this.jwtService.revokeAllTokens(userId);
+
+      const successResponse: ApiResponse = {
+        success: true,
+        message: '로그아웃이 완료되었습니다.',
+      };
+      res.json(successResponse);
+    } catch (error) {
+      if (error instanceof Error) {
+        const errorResponse: ErrorResponseDTO = {
+          success: false,
+          message: error.message,
+        };
+        res.status(400).json(errorResponse);
+        return;
+      }
+      next(error);
+    }
   };
 }

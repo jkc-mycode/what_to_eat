@@ -9,12 +9,14 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  nickname  String?
-  socialId   String?  @unique
-  createdAt DateTime @default(now())
+  id                     String    @id @default(uuid())
+  email                  String    @unique
+  password               String
+  nickname               String?
+  socialId               String?   @unique
+  refreshToken           String?   @unique
+  refreshTokenExpiresAt  DateTime?
+  createdAt              DateTime  @default(now())
 
   @@map("users")
 }

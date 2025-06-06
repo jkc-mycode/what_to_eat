@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import passport from 'passport';
+import { JwtService } from '../services/jwt.service';
 
-// Passport JWT 미들웨어 (사용자 인증 확인용 미들웨어)
+// Passport JWT 미들웨어 (Access Token 인증용)
 export const authenticateJWT = (req: Request, res: Response, next: NextFunction) => {
   passport.authenticate('jwt', { session: false }, (error: any, user: any, info: any) => {
     if (error) {
@@ -22,4 +23,34 @@ export const authenticateJWT = (req: Request, res: Response, next: NextFunction)
     req.user = user;
     next();
   })(req, res, next);
+};
+
+// Refresh Token 검증 미들웨어
+export const authenticateRefreshToken = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({
+        success: false,
+        message: 'Refresh Token이 필요합니다.',
+      });
+      return;
+    }
+
+    const refreshToken = authHeader.substring(7);
+    const jwtService = new JwtService();
+
+    // Refresh Token 검증
+    const decoded = await jwtService.verifyRefreshToken(refreshToken);
+
+    // req에 사용자 ID 설정
+    req.user = { id: decoded.id };
+    next();
+  } catch (error) {
+    res.status(401).json({
+      success: false,
+      message: error instanceof Error ? error.message : '유효하지 않은 Refresh Token입니다.',
+    });
+  }
 };
