@@ -11,6 +11,7 @@ import { errorHandlerMiddleware } from './middlewares/error-handler.middleware';
 import { prisma } from './utils/prisma.util';
 import './config/passport.config'; // Passport 설정 초기화
 import authRoutes from './routes/auth.routes';
+import postRoutes from './routes/post.routes';
 
 const app = express();
 const SERVER_PORT = process.env.SERVER_PORT || 3000;
@@ -20,7 +21,7 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
-// 세션 설정
+// 세션 설정 (나중에 사용)
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'your-session-secret',
@@ -29,7 +30,7 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 24 * 60 * 60 * 1000, // 24시간
-      httpOnly: true,
+      httpOnly: true, // Refresh Token 보안을 위해 설정
     },
   })
 );
@@ -45,6 +46,9 @@ app.get('/', (req: Request, res: Response) => {
 
 // 인증 라우트
 app.use('/api/auth', authRoutes);
+
+// 게시물 라우트
+app.use('/api/posts', postRoutes);
 
 console.log('DB 연결 테스트 시작...');
 prisma.$queryRaw`SELECT 1`;

@@ -17,6 +17,20 @@ model User {
   refreshToken           String?   @unique
   refreshTokenExpiresAt  DateTime?
   createdAt              DateTime  @default(now())
+  
+  posts                  Post[]
 
   @@map("users")
+}
+
+model Post {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   @db.Text
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("posts")
 }
