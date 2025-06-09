@@ -48,7 +48,7 @@ app.get('/', (req: Request, res: Response) => {
 app.use('/api/auth', authRoutes);
 
 // 게시물 라우트
-app.use('/api/posts', postRoutes);
+app.use('/api/post', postRoutes);
 
 console.log('DB 연결 테스트 시작...');
 prisma.$queryRaw`SELECT 1`;

@@ -37,11 +37,13 @@ export class PostService {
     const { page = 1, limit = 10, search } = query;
     const skip = (page - 1) * limit;
 
-    const where = search
-      ? {
-          OR: [{ title: { contains: search } }, { content: { contains: search } }],
-        }
-      : {};
+    // 삭제되지 않았고, search에 해당하는 게시물만 조회
+    const where = {
+      deletedAt: null,
+      ...(search && {
+        OR: [{ title: { contains: search } }, { content: { contains: search } }],
+      }),
+    };
 
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
@@ -75,7 +77,10 @@ export class PostService {
   // 게시물 단일 조회
   async getPostById(id: string): Promise<PostResponse> {
     const post = await prisma.post.findUnique({
-      where: { id },
+      where: {
+        id,
+        deletedAt: null,
+      },
       include: {
         author: {
           select: {
@@ -96,9 +101,12 @@ export class PostService {
 
   // 게시물 수정
   async updatePost(id: string, authorId: string, data: UpdatePostDto): Promise<PostResponse> {
-    // 게시물 존재 확인 및 작성자 검증
-    const existingPost = await prisma.post.findUnique({
-      where: { id },
+    // 게시물 존재 확인 및 작성자 검증 (삭제되지 않은 게시물만)
+    const existingPost = await prisma.post.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
     });
 
     if (!existingPost) {
@@ -128,9 +136,12 @@ export class PostService {
 
   // 게시물 삭제
   async deletePost(id: string, authorId: string): Promise<void> {
-    // 게시물 존재 확인 및 작성자 검증
-    const existingPost = await prisma.post.findUnique({
-      where: { id },
+    // 게시물 존재 확인 및 작성자 검증 (삭제되지 않은 게시물만)
+    const existingPost = await prisma.post.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
     });
 
     if (!existingPost) {
@@ -141,8 +152,12 @@ export class PostService {
       throw new Error('게시물을 삭제할 권한이 없습니다.');
     }
 
-    await prisma.post.delete({
+    // Soft Delete
+    await prisma.post.update({
       where: { id },
+      data: {
+        deletedAt: new Date(),
+      },
     });
   }
 }

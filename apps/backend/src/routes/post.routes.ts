@@ -16,7 +16,7 @@ router.get('/:id', postController.getPost);
 router.post('/', authenticateJWT, postController.createPost as any);
 
 // 게시물 수정 (인증 필요)
-router.put('/:id', authenticateJWT, postController.updatePost as any);
+router.patch('/:id', authenticateJWT, postController.updatePost as any);
 
 // 게시물 삭제 (인증 필요)
 router.delete('/:id', authenticateJWT, postController.deletePost as any);

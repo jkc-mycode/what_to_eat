@@ -20,6 +20,7 @@ export interface PostResponse {
   };
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 }
 
 export interface PostListResponse {
