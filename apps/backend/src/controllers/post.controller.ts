@@ -1,19 +1,24 @@
 import { Request, Response, NextFunction } from 'express';
 import { PostService } from '../services/post.service';
-import { CreatePostDto, UpdatePostDto, GetPostsQuery } from '../types/post.types';
+import {
+  CreatePostDto,
+  UpdatePostDto,
+  GetPostsQuery,
+  CreatePostWithPollDto,
+} from '../types/post.types';
 import { AuthenticatedRequest, ApiResponse, ErrorResponseDTO } from '../types/auth.types';
 
 export class PostController {
   constructor(private postService: PostService) {}
 
-  // 게시물 생성
+  // 게시물 생성 (투표 포함 가능)
   createPost = async (
     req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
     try {
-      const { title, content }: CreatePostDto = req.body;
+      const { title, content, poll }: CreatePostWithPollDto = req.body;
       const authorId = req.user.id;
 
       // 입력값 검증
@@ -35,7 +40,39 @@ export class PostController {
         return;
       }
 
-      const post = await this.postService.createPost(authorId, { title, content });
+      // 투표 검증 (있는 경우)
+      if (poll) {
+        if (!poll.title || !poll.options) {
+          const errorResponse: ErrorResponseDTO = {
+            success: false,
+            message: '투표 제목과 선택지를 입력해주세요.',
+          };
+          res.status(400).json(errorResponse);
+          return;
+        }
+
+        if (!Array.isArray(poll.options) || poll.options.length < 2) {
+          const errorResponse: ErrorResponseDTO = {
+            success: false,
+            message: '투표는 최소 2개 이상의 선택지가 필요합니다.',
+          };
+          res.status(400).json(errorResponse);
+          return;
+        }
+
+        if (poll.options.length > 10) {
+          const errorResponse: ErrorResponseDTO = {
+            success: false,
+            message: '투표 선택지는 최대 10개까지 가능합니다.',
+          };
+          res.status(400).json(errorResponse);
+          return;
+        }
+      }
+
+      const post = poll
+        ? await this.postService.createPostWithPoll(authorId, { title, content, poll })
+        : await this.postService.createPost(authorId, { title, content });
 
       const successResponse: ApiResponse = {
         success: true,

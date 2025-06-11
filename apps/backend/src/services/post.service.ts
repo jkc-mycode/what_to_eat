@@ -5,9 +5,13 @@ import {
   PostResponse,
   PostListResponse,
   GetPostsQuery,
+  CreatePostWithPollDto,
 } from '../types/post.types';
+import { PollService } from './poll.service';
 
 export class PostService {
+  private pollService = new PollService();
+
   // 게시물 생성
   async createPost(authorId: string, data: CreatePostDto): Promise<PostResponse> {
     const { title, content } = data;
@@ -28,6 +32,35 @@ export class PostService {
         },
       },
     });
+
+    return post;
+  }
+
+  // 투표와 함께 게시물 생성
+  async createPostWithPoll(authorId: string, data: CreatePostWithPollDto): Promise<PostResponse> {
+    const { title, content, poll } = data;
+
+    const post = await prisma.post.create({
+      data: {
+        title,
+        content,
+        authorId,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            nickname: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    // 투표 생성 (있는 경우)
+    if (poll) {
+      await this.pollService.createPoll(post.id, poll);
+    }
 
     return post;
   }
@@ -66,8 +99,29 @@ export class PostService {
       prisma.post.count({ where }),
     ]);
 
+    // 각 게시물에 투표 정보 추가
+    const postsWithPoll = await Promise.all(
+      posts.map(async (post) => {
+        const poll = await this.pollService.getPollByPostId(post.id);
+        return {
+          ...post,
+          poll: poll
+            ? {
+                id: poll.id,
+                title: poll.title,
+                description: poll.description,
+                isActive: poll.isActive,
+                expiresAt: poll.expiresAt,
+                options: poll.options,
+                totalVotes: poll.totalVotes,
+              }
+            : undefined,
+        };
+      })
+    );
+
     return {
-      posts,
+      posts: postsWithPoll,
       total,
       page,
       limit,
@@ -96,7 +150,23 @@ export class PostService {
       throw new Error('게시물을 찾을 수 없습니다.');
     }
 
-    return post;
+    // 투표 정보 추가
+    const poll = await this.pollService.getPollByPostId(post.id);
+
+    return {
+      ...post,
+      poll: poll
+        ? {
+            id: poll.id,
+            title: poll.title,
+            description: poll.description,
+            isActive: poll.isActive,
+            expiresAt: poll.expiresAt,
+            options: poll.options,
+            totalVotes: poll.totalVotes,
+          }
+        : undefined,
+    };
   }
 
   // 게시물 수정

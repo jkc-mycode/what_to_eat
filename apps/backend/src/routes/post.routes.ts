@@ -6,10 +6,10 @@ import { authenticateJWT } from '../middlewares/auth.middleware';
 const router = Router();
 const postController = new PostController(new PostService());
 
-// 게시물 목록 조회 (인증 불필요)
+// 게시물 목록 조회
 router.get('/', postController.getPosts);
 
-// 게시물 단일 조회 (인증 불필요)
+// 게시물 단일 조회
 router.get('/:id', postController.getPost);
 
 // 게시물 생성 (인증 필요)
