@@ -1,298 +1,101 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { PostService } from '../services/post.service';
-import {
-  CreatePostDto,
-  UpdatePostDto,
-  GetPostsQuery,
-  CreatePostWithPollDto,
-} from '../types/post.types';
-import { AuthenticatedRequest, ApiResponse, ErrorResponseDTO } from '../types/auth.types';
+import { CreatePostDto, UpdatePostDto, GetPostsQuery, VoteDto } from '../types/post.types';
+import { AuthenticatedRequest } from '../types/auth.types';
 
 export class PostController {
   constructor(private postService: PostService) {}
 
   // 게시물 생성 (투표 포함 가능)
-  createPost = async (
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
+  createPost = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const { title, content, poll }: CreatePostWithPollDto = req.body;
-      const authorId = req.user.id;
+      const userId = req.user!.id;
+      const dto: CreatePostDto = req.body;
 
-      // 입력값 검증
-      if (!title || !content) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: '제목과 내용을 입력해주세요.',
-        };
-        res.status(400).json(errorResponse);
-        return;
-      }
-
-      if (title.length > 200) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: '제목은 200자를 초과할 수 없습니다.',
-        };
-        res.status(400).json(errorResponse);
-        return;
-      }
-
-      // 투표 검증 (있는 경우)
-      if (poll) {
-        if (!poll.title || !poll.options) {
-          const errorResponse: ErrorResponseDTO = {
-            success: false,
-            message: '투표 제목과 선택지를 입력해주세요.',
-          };
-          res.status(400).json(errorResponse);
-          return;
-        }
-
-        if (!Array.isArray(poll.options) || poll.options.length < 2) {
-          const errorResponse: ErrorResponseDTO = {
-            success: false,
-            message: '투표는 최소 2개 이상의 선택지가 필요합니다.',
-          };
-          res.status(400).json(errorResponse);
-          return;
-        }
-
-        if (poll.options.length > 10) {
-          const errorResponse: ErrorResponseDTO = {
-            success: false,
-            message: '투표 선택지는 최대 10개까지 가능합니다.',
-          };
-          res.status(400).json(errorResponse);
-          return;
-        }
-      }
-
-      const post = poll
-        ? await this.postService.createPostWithPoll(authorId, { title, content, poll })
-        : await this.postService.createPost(authorId, { title, content });
-
-      const successResponse: ApiResponse = {
-        success: true,
-        message: '게시물이 생성되었습니다.',
-        data: { post },
-      };
-
-      res.status(201).json(successResponse);
+      const post = await this.postService.createPost(userId, dto);
+      res.status(201).json(post);
     } catch (error) {
-      if (error instanceof Error) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: error.message,
-        };
-        res.status(400).json(errorResponse);
-        return;
-      }
-      next(error);
+      res.status(500).json({ message: '게시물 생성 중 오류가 발생했습니다.' });
     }
   };
 
   // 게시물 목록 조회
-  getPosts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getPosts = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { page, limit, search }: GetPostsQuery = req.query;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
 
-      const pageNum = page ? parseInt(String(page), 10) : 1;
-      const limitNum = limit ? parseInt(String(limit), 10) : 10;
-
-      // 페이지네이션 검증
-      if (pageNum < 1) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: '페이지 번호는 1 이상이어야 합니다.',
-        };
-        res.status(400).json(errorResponse);
-        return;
-      }
-
-      if (limitNum < 1 || limitNum > 100) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: 'limit은 1 이상 100 이하여야 합니다.',
-        };
-        res.status(400).json(errorResponse);
-        return;
-      }
-
-      const result = await this.postService.getPosts({
-        page: pageNum,
-        limit: limitNum,
-        search: typeof search === 'string' ? search : undefined,
-      });
-
-      const successResponse: ApiResponse = {
-        success: true,
-        data: result,
-      };
-
-      res.json(successResponse);
+      const result = await this.postService.getPosts(page, limit);
+      res.json(result);
     } catch (error) {
-      if (error instanceof Error) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: error.message,
-        };
-        res.status(500).json(errorResponse);
-        return;
-      }
-      next(error);
+      res.status(500).json({ message: '게시물 목록 조회 중 오류가 발생했습니다.' });
     }
   };
 
-  // 게시물 단일 조회
-  getPost = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  // 게시물 상세 조회
+  getPost = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      const userId = (req as AuthenticatedRequest).user?.id || null;
 
-      if (!id) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: '게시물 ID가 필요합니다.',
-        };
-        res.status(400).json(errorResponse);
-        return;
-      }
-
-      const post = await this.postService.getPostById(id);
-
-      const successResponse: ApiResponse = {
-        success: true,
-        data: { post },
-      };
-
-      res.json(successResponse);
+      const post = await this.postService.getPost(id, userId);
+      res.json(post);
     } catch (error) {
-      if (error instanceof Error) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: error.message,
-        };
-        const statusCode = error.message === '게시물을 찾을 수 없습니다.' ? 404 : 500;
-        res.status(statusCode).json(errorResponse);
-        return;
-      }
-      next(error);
+      res.status(500).json({ message: '게시물 조회 중 오류가 발생했습니다.' });
     }
   };
 
   // 게시물 수정
-  updatePost = async (
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
+  updatePost = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const { title, content }: UpdatePostDto = req.body;
-      const authorId = req.user.id;
+      const userId = req.user!.id;
+      const dto: UpdatePostDto = req.body;
 
-      if (!id) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: '게시물 ID가 필요합니다.',
-        };
-        res.status(400).json(errorResponse);
-        return;
-      }
-
-      // 수정할 내용이 없는 경우
-      if (!title && !content) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: '수정할 내용을 입력해주세요.',
-        };
-        res.status(400).json(errorResponse);
-        return;
-      }
-
-      // 제목 길이 검증
-      if (title && title.length > 200) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: '제목은 200자를 초과할 수 없습니다.',
-        };
-        res.status(400).json(errorResponse);
-        return;
-      }
-
-      const updatedPost = await this.postService.updatePost(id, authorId, { title, content });
-
-      const successResponse: ApiResponse = {
-        success: true,
-        message: '게시물이 수정되었습니다.',
-        data: { post: updatedPost },
-      };
-
-      res.json(successResponse);
+      const post = await this.postService.updatePost(id, userId, dto);
+      res.json(post);
     } catch (error) {
-      if (error instanceof Error) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: error.message,
-        };
-        let statusCode = 500;
-        if (error.message === '게시물을 찾을 수 없습니다.') {
-          statusCode = 404;
-        } else if (error.message === '게시물을 수정할 권한이 없습니다.') {
-          statusCode = 403;
-        }
-        res.status(statusCode).json(errorResponse);
-        return;
-      }
-      next(error);
+      res.status(500).json({ message: '게시물 수정 중 오류가 발생했습니다.' });
     }
   };
 
   // 게시물 삭제
-  deletePost = async (
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
+  deletePost = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const authorId = req.user.id;
+      const userId = req.user!.id;
 
-      if (!id) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: '게시물 ID가 필요합니다.',
-        };
-        res.status(400).json(errorResponse);
-        return;
-      }
-
-      await this.postService.deletePost(id, authorId);
-
-      const successResponse: ApiResponse = {
-        success: true,
-        message: '게시물이 삭제되었습니다.',
-      };
-
-      res.json(successResponse);
+      await this.postService.deletePost(id, userId);
+      res.status(204).send();
     } catch (error) {
-      if (error instanceof Error) {
-        const errorResponse: ErrorResponseDTO = {
-          success: false,
-          message: error.message,
-        };
-        let statusCode = 500;
-        if (error.message === '게시물을 찾을 수 없습니다.') {
-          statusCode = 404;
-        } else if (error.message === '게시물을 삭제할 권한이 없습니다.') {
-          statusCode = 403;
-        }
-        res.status(statusCode).json(errorResponse);
-        return;
-      }
-      next(error);
+      res.status(500).json({ message: '게시물 삭제 중 오류가 발생했습니다.' });
+    }
+  };
+
+  // 투표하기
+  vote = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.id;
+      const dto: VoteDto = req.body;
+
+      const post = await this.postService.vote(id, userId, dto);
+      res.json(post);
+    } catch (error) {
+      res.status(500).json({ message: '투표 중 오류가 발생했습니다.' });
+    }
+  };
+
+  cancelVote = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.id;
+      const dto: VoteDto = req.body;
+
+      const post = await this.postService.cancelVote(id, userId, dto);
+      res.json(post);
+    } catch (error) {
+      res.status(500).json({ message: '투표 취소 중 오류가 발생했습니다.' });
     }
   };
 }

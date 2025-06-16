@@ -12,7 +12,6 @@ import { prisma } from './utils/prisma.util';
 import './config/passport.config'; // Passport 설정 초기화
 import authRoutes from './routes/auth.routes';
 import postRoutes from './routes/post.routes';
-import pollRoutes from './routes/poll.routes';
 
 const app = express();
 const SERVER_PORT = process.env.SERVER_PORT || 3000;
@@ -50,9 +49,6 @@ app.use('/api/auth', authRoutes);
 
 // 게시물 라우트
 app.use('/api/post', postRoutes);
-
-// 투표 라우트
-app.use('/api/poll', pollRoutes);
 
 console.log('DB 연결 테스트 시작...');
 prisma.$queryRaw`SELECT 1`;

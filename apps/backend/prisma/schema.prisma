@@ -9,73 +9,66 @@ datasource db {
 }
 
 model User {
-  id                     String    @id @default(uuid())
-  email                  String    @unique
-  password               String
-  nickname               String?
-  socialId               String?   @unique
-  refreshToken           String?   @unique
-  refreshTokenExpiresAt  DateTime?
-  createdAt              DateTime  @default(now())
-  
-  posts                  Post[]
-  votes                  Vote[]
+  id                    String    @id @default(uuid())
+  email                 String    @unique
+  password              String
+  nickname              String?
+  socialId              String?   @unique
+  refreshToken          String?   @unique
+  refreshTokenExpiresAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+
+  posts     Post[]
+  userVotes UserVote[]
 
   @@map("users")
 }
 
 model Post {
-  id          String    @id @default(uuid())
-  title       String
-  content     String    @db.Text
-  authorId    String
-  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  id        String    @id @default(uuid())
+  title     String // 게시물/투표 제목
+  content   String    @db.Text // 게시물/투표 내용
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  poll        Poll?
+  // 투표 관련 필드
+  isPoll        Boolean   @default(false) // 투표 여부
+  isPollActive  Boolean   @default(true) // 투표 활성화 상태
+  pollExpiresAt DateTime? // 투표 만료 시간
+
+  votes Vote[] // 투표 항목들
 
   @@map("posts")
 }
 
-model Poll {
-  id          String    @id @default(uuid())
-  title       String
-  description String?   @db.Text
-  postId      String    @unique
-  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  isActive    Boolean   @default(true)
-  expiresAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  options     PollOption[]
-  votes       Vote[]
-
-  @@map("polls")
-}
-
-model PollOption {
-  id       String @id @default(uuid())
-  text     String
-  pollId   String
-  poll     Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
-  votes    Vote[]
-
-  @@map("poll_options")
-}
-
 model Vote {
-  id           String     @id @default(uuid())
-  userId       String
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pollId       String
-  poll         Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
-  optionId     String
-  option       PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
-  createdAt    DateTime   @default(now())
-  
-  @@unique([userId, pollId])
+  id        String     @id @default(uuid())
+  text      String // 투표 항목 텍스트
+  postId    String
+  post      Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userVotes UserVote[] // 투표 기록들
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([postId])
   @@map("votes")
+}
+
+model UserVote {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voteId    String
+  vote      Vote     @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, voteId]) // 한 사용자는 한 투표 항목에 한 번만 투표 가능
+  @@index([userId])
+  @@index([voteId])
+  @@map("user_votes")
 }
