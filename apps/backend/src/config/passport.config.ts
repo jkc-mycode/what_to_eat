@@ -53,7 +53,6 @@ passport.use(
     async (accessToken: string, refreshToken: string, profile: any, done: any) => {
       try {
         // 카카오 프로필에서 정보 추출
-        console.log('profile', profile);
         const kakaoId = profile.id;
         const email = profile._json.kakao_account?.email;
         const nickname = profile.displayName || profile._json.properties?.nickname;

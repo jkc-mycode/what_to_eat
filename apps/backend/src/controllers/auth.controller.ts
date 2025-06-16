@@ -230,8 +230,6 @@ export class AuthController {
         return;
       }
 
-      console.log(user);
-
       // 이미 로그아웃된 상태인지 확인
       if (!user.refreshToken) {
         const errorResponse: ErrorResponseDTO = {

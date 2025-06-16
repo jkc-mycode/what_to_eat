@@ -30,6 +30,14 @@ export class PostService {
       }
     }
 
+    // 투표 게시물인 경우 투표 메뉴 중복 체크
+    if (dto.isPoll && dto.votes) {
+      const uniqueVotes = new Set(dto.votes);
+      if (uniqueVotes.size !== dto.votes.length) {
+        throw new HttpException(400, '투표 메뉴에 중복된 항목이 있습니다.');
+      }
+    }
+
     const post = await this.prisma.post.create({
       data: {
         title,
@@ -75,12 +83,6 @@ export class PostService {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
       include: {
-        author: {
-          select: {
-            id: true,
-            nickname: true,
-          },
-        },
         votes: {
           include: {
             userVotes: {
@@ -105,9 +107,62 @@ export class PostService {
       throw new HttpException(403, '게시물을 수정할 권한이 없습니다.');
     }
 
+    // 투표 게시물인 경우 투표 메뉴 수정
+    if (post.isPoll && dto.votes) {
+      // 기존 투표 항목과 새로운 투표 항목 비교
+      const existingVotes = post.votes;
+      const newVotes = dto.votes;
+
+      // 삭제할 투표 항목 찾기 (기존에 있지만 새로운 목록에는 없는 항목)
+      const votesToDelete = existingVotes.filter((existing) => !newVotes.includes(existing.text));
+
+      // 추가할 투표 항목 찾기 (새로운 목록에는 있지만 기존에는 없는 항목)
+      const votesToAdd = newVotes.filter(
+        (newVote) => !existingVotes.some((existing) => existing.text === newVote)
+      );
+
+      // 삭제할 투표 항목이 있는 경우
+      if (votesToDelete.length > 0) {
+        // 해당 투표 항목에 대한 모든 투표 기록 삭제
+        await this.prisma.userVote.deleteMany({
+          where: {
+            voteId: {
+              in: votesToDelete.map((vote) => vote.id),
+            },
+          },
+        });
+
+        // 투표 항목 삭제
+        await this.prisma.vote.deleteMany({
+          where: {
+            id: {
+              in: votesToDelete.map((vote) => vote.id),
+            },
+          },
+        });
+      }
+
+      // 추가할 투표 항목이 있는 경우
+      if (votesToAdd.length > 0) {
+        await this.prisma.vote.createMany({
+          data: votesToAdd.map((text) => ({
+            postId,
+            text,
+          })),
+        });
+      }
+    }
+
+    // 게시물 정보 업데이트
     const updatedPost = await this.prisma.post.update({
       where: { id: postId },
-      data: dto,
+      data: {
+        title: dto.title,
+        content: dto.content,
+        isPoll: dto.isPoll,
+        isPollActive: dto.isPollActive,
+        pollExpiresAt: dto.pollExpiresAt,
+      },
       include: {
         author: {
           select: {
@@ -188,7 +243,7 @@ export class PostService {
     ]);
 
     return {
-      posts: posts.map((post) => this.formatPostResponse(post, null)),
+      posts: posts.map((post) => this.formatPostListResponse(post)),
       total,
       page,
       limit,
@@ -232,105 +287,126 @@ export class PostService {
 
   // 투표 게시물 검증
   private async validateVotePost(postId: string, userId: string, voteId: string) {
-    const post = await this.prisma.post.findUnique({
-      where: { id: postId },
-      include: {
-        votes: {
-          include: {
-            userVotes: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
+    try {
+      const post = await this.prisma.post.findUnique({
+        where: { id: postId },
+        include: {
+          votes: {
+            include: {
+              userVotes: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    if (!post) {
-      throw new HttpException(404, '게시물을 찾을 수 없습니다.');
+      if (!post) {
+        throw new HttpException(404, '게시물을 찾을 수 없습니다.');
+      }
+
+      if (!post.isPoll) {
+        throw new HttpException(400, '투표 게시물이 아닙니다.');
+      }
+
+      if (!post.isPollActive) {
+        throw new HttpException(400, '종료된 투표입니다.');
+      }
+
+      // 만료 시간 확인 로직 개선
+      if (post.pollExpiresAt && post.pollExpiresAt < new Date()) {
+        throw new HttpException(400, '만료된 투표입니다.');
+      }
+
+      const vote = post.votes.find((v) => v.id === voteId);
+      if (!vote) {
+        throw new HttpException(404, '투표 항목을 찾을 수 없습니다.');
+      }
+
+      return { post, vote };
+    } catch (error) {
+      console.error('투표 게시물 검증 중 오류 발생:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(500, '투표 게시물 검증 중 오류가 발생했습니다.');
     }
-
-    if (!post.isPoll) {
-      throw new HttpException(400, '투표 게시물이 아닙니다.');
-    }
-
-    if (!post.isPollActive) {
-      throw new HttpException(400, '종료된 투표입니다.');
-    }
-
-    if (post.pollExpiresAt && post.pollExpiresAt < new Date()) {
-      throw new HttpException(400, '만료된 투표입니다.');
-    }
-
-    const vote = post.votes.find((v) => v.id === voteId);
-    if (!vote) {
-      throw new HttpException(404, '투표 항목을 찾을 수 없습니다.');
-    }
-
-    return { post, vote };
   }
 
   // 투표하기
   async vote(postId: string, userId: string, dto: VoteDto): Promise<PostResponse> {
-    const { voteId } = dto;
+    try {
+      const { voteId } = dto;
 
-    // 투표 게시물 검증
-    const { post } = await this.validateVotePost(postId, userId, voteId);
+      // 투표 게시물 검증
+      const { post } = await this.validateVotePost(postId, userId, voteId);
 
-    // 이미 투표했는지 확인
-    const existingVote = await this.prisma.userVote.findFirst({
-      where: {
-        userId,
-        vote: {
-          postId,
-        },
-      },
-    });
-
-    if (existingVote) {
-      throw new HttpException(400, '이미 투표했습니다.');
-    }
-
-    // 투표 생성
-    await this.prisma.userVote.create({
-      data: {
-        userId,
-        voteId,
-      },
-    });
-
-    // 업데이트된 게시물 조회
-    const updatedPost = await this.prisma.post.findUnique({
-      where: { id: postId },
-      include: {
-        author: {
-          select: {
-            id: true,
-            nickname: true,
+      // 이미 투표했는지 확인
+      const existingVote = await this.prisma.userVote.findFirst({
+        where: {
+          userId,
+          vote: {
+            postId,
           },
         },
-        votes: {
-          include: {
-            userVotes: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
+      });
+
+      if (existingVote) {
+        throw new HttpException(400, '이미 투표했습니다.');
+      }
+
+      // 투표 생성
+      await this.prisma.userVote.create({
+        data: {
+          userId,
+          voteId,
+        },
+      });
+
+      // 업데이트된 게시물 조회
+      const updatedPost = await this.prisma.post.findUnique({
+        where: { id: postId },
+        include: {
+          author: {
+            select: {
+              id: true,
+              nickname: true,
+            },
+          },
+          votes: {
+            include: {
+              userVotes: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    return this.formatPostResponse(updatedPost!, userId);
+      if (!updatedPost) {
+        throw new HttpException(404, '게시물을 찾을 수 없습니다.');
+      }
+
+      return this.formatPostResponse(updatedPost, userId);
+    } catch (error) {
+      console.error('투표 처리 중 오류 발생:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(500, '투표 중 오류가 발생했습니다.');
+    }
   }
 
   // 투표 취소
@@ -422,6 +498,24 @@ export class PostService {
       })),
       totalVotes,
       userVoted,
+    };
+  }
+
+  // 게시물 목록 조회 포멧팅 (votes 데이터 제외)
+  private formatPostListResponse(post: PostWithDetails): PostResponse {
+    return {
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      author: {
+        id: post.author.id,
+        nickname: post.author.nickname || '',
+      },
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      isPoll: post.isPoll,
+      isPollActive: post.isPollActive,
+      pollExpiresAt: post.pollExpiresAt,
     };
   }
 }

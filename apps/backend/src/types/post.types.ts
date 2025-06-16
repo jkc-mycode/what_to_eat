@@ -31,8 +31,10 @@ export interface CreatePostDto {
 export interface UpdatePostDto {
   title?: string;
   content?: string;
+  isPoll?: boolean;
   isPollActive?: boolean;
-  pollExpiresAt?: Date;
+  pollExpiresAt?: Date | null;
+  votes?: string[];
 }
 
 // 투표 DTO
@@ -54,9 +56,9 @@ export interface PostResponse {
   isPoll: boolean;
   isPollActive: boolean;
   pollExpiresAt: Date | null;
-  votes: VoteResponse[];
-  totalVotes: number;
-  userVoted: boolean;
+  votes?: VoteResponse[];
+  totalVotes?: number;
+  userVoted?: boolean;
 }
 
 // 게시물 목록 응답 타입

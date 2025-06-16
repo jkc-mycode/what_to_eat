@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PostService } from '../services/post.service';
 import { CreatePostDto, UpdatePostDto, GetPostsQuery, VoteDto } from '../types/post.types';
 import { AuthenticatedRequest } from '../types/auth.types';
+import HttpException from '../utils/error-exception.util';
 
 export class PostController {
   constructor(private postService: PostService) {}
@@ -73,16 +74,20 @@ export class PostController {
   };
 
   // 투표하기
-  vote = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  vote = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { id } = req.params;
+      const postId = req.params.id;
       const userId = req.user!.id;
-      const dto: VoteDto = req.body;
+      const dto = req.body as VoteDto;
 
-      const post = await this.postService.vote(id, userId, dto);
-      res.json(post);
+      const result = await this.postService.vote(postId, userId, dto);
+      res.json(result);
     } catch (error) {
-      res.status(500).json({ message: '투표 중 오류가 발생했습니다.' });
+      if (error instanceof HttpException) {
+        res.status(error.status).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: '투표 중 오류가 발생했습니다.' });
+      }
     }
   };
 
