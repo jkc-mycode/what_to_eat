@@ -74,12 +74,11 @@ export class PostService {
         },
       },
     });
-
     return this.formatPostResponse(post, userId);
   }
 
   // 게시물 수정
-  async updatePost(postId: string, userId: string, dto: UpdatePostDto): Promise<PostResponse> {
+  async updatePost(postId: string, userId: string, dto: UpdatePostDto): Promise<void> {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
       include: {
@@ -154,7 +153,7 @@ export class PostService {
     }
 
     // 게시물 정보 업데이트
-    const updatedPost = await this.prisma.post.update({
+    await this.prisma.post.update({
       where: { id: postId },
       data: {
         title: dto.title,
@@ -185,8 +184,7 @@ export class PostService {
         },
       },
     });
-
-    return this.formatPostResponse(updatedPost, userId);
+    // 성공 시 아무것도 반환하지 않음
   }
 
   // 게시물 삭제
@@ -206,6 +204,7 @@ export class PostService {
     await this.prisma.post.delete({
       where: { id: postId },
     });
+    // 성공 시 아무것도 반환하지 않음
   }
 
   // 게시물 목록 조회
@@ -340,7 +339,7 @@ export class PostService {
   }
 
   // 투표하기
-  async vote(postId: string, userId: string, dto: VoteDto): Promise<PostResponse> {
+  async vote(postId: string, userId: string, dto: VoteDto): Promise<void> {
     try {
       const { voteId } = dto;
 
@@ -368,38 +367,7 @@ export class PostService {
           voteId,
         },
       });
-
-      // 업데이트된 게시물 조회
-      const updatedPost = await this.prisma.post.findUnique({
-        where: { id: postId },
-        include: {
-          author: {
-            select: {
-              id: true,
-              nickname: true,
-            },
-          },
-          votes: {
-            include: {
-              userVotes: {
-                include: {
-                  user: {
-                    select: {
-                      id: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-
-      if (!updatedPost) {
-        throw new HttpException(404, '게시물을 찾을 수 없습니다.');
-      }
-
-      return this.formatPostResponse(updatedPost, userId);
+      // 성공 시 아무것도 반환하지 않음
     } catch (error) {
       console.error('투표 처리 중 오류 발생:', error);
       if (error instanceof HttpException) {
@@ -410,7 +378,7 @@ export class PostService {
   }
 
   // 투표 취소
-  async cancelVote(postId: string, userId: string, dto: VoteDto): Promise<PostResponse> {
+  async cancelVote(postId: string, userId: string, dto: VoteDto): Promise<void> {
     const { voteId } = dto;
 
     // 투표 게시물 검증
@@ -439,34 +407,7 @@ export class PostService {
         },
       },
     });
-
-    // 업데이트된 게시물 조회
-    const updatedPost = await this.prisma.post.findUnique({
-      where: { id: postId },
-      include: {
-        author: {
-          select: {
-            id: true,
-            nickname: true,
-          },
-        },
-        votes: {
-          include: {
-            userVotes: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-
-    return this.formatPostResponse(updatedPost!, userId);
+    // 성공 시 아무것도 반환하지 않음
   }
 
   // 게시물 응답 포맷팅

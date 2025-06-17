@@ -14,9 +14,15 @@ export class PostController {
       const dto: CreatePostDto = req.body;
 
       const post = await this.postService.createPost(userId, dto);
-      res.status(201).json(post);
+      res
+        .status(201)
+        .json({ success: true, message: '게시물이 성공적으로 생성되었습니다.', data: post });
     } catch (error) {
-      res.status(500).json({ message: '게시물 생성 중 오류가 발생했습니다.' });
+      if (error instanceof HttpException) {
+        res.status(error.status).json({ success: false, message: error.message });
+      } else {
+        res.status(500).json({ success: false, message: '게시물 생성 중 오류가 발생했습니다.' });
+      }
     }
   };
 
@@ -27,9 +33,9 @@ export class PostController {
       const limit = parseInt(req.query.limit as string) || 10;
 
       const result = await this.postService.getPosts(page, limit);
-      res.json(result);
+      res.json({ success: true, data: result });
     } catch (error) {
-      res.status(500).json({ message: '게시물 목록 조회 중 오류가 발생했습니다.' });
+      res.status(500).json({ success: false, message: '게시물 목록 조회 중 오류가 발생했습니다.' });
     }
   };
 
@@ -40,9 +46,9 @@ export class PostController {
       const userId = (req as AuthenticatedRequest).user?.id || null;
 
       const post = await this.postService.getPost(id, userId);
-      res.json(post);
+      res.json({ success: true, data: post });
     } catch (error) {
-      res.status(500).json({ message: '게시물 조회 중 오류가 발생했습니다.' });
+      res.status(500).json({ success: false, message: '게시물 조회 중 오류가 발생했습니다.' });
     }
   };
 
@@ -53,10 +59,14 @@ export class PostController {
       const userId = req.user!.id;
       const dto: UpdatePostDto = req.body;
 
-      const post = await this.postService.updatePost(id, userId, dto);
-      res.json(post);
+      await this.postService.updatePost(id, userId, dto);
+      res.json({ success: true, message: '게시물이 성공적으로 수정되었습니다.' });
     } catch (error) {
-      res.status(500).json({ message: '게시물 수정 중 오류가 발생했습니다.' });
+      if (error instanceof HttpException) {
+        res.status(error.status).json({ success: false, message: error.message });
+      } else {
+        res.status(500).json({ success: false, message: '게시물 수정 중 오류가 발생했습니다.' });
+      }
     }
   };
 
@@ -67,9 +77,13 @@ export class PostController {
       const userId = req.user!.id;
 
       await this.postService.deletePost(id, userId);
-      res.status(204).send();
+      res.json({ success: true, message: '게시물이 성공적으로 삭제되었습니다.' });
     } catch (error) {
-      res.status(500).json({ message: '게시물 삭제 중 오류가 발생했습니다.' });
+      if (error instanceof HttpException) {
+        res.status(error.status).json({ success: false, message: error.message });
+      } else {
+        res.status(500).json({ success: false, message: '게시물 삭제 중 오류가 발생했습니다.' });
+      }
     }
   };
 
@@ -80,13 +94,13 @@ export class PostController {
       const userId = req.user!.id;
       const dto = req.body as VoteDto;
 
-      const result = await this.postService.vote(postId, userId, dto);
-      res.json(result);
+      await this.postService.vote(postId, userId, dto);
+      res.json({ success: true, message: '투표가 정상적으로 처리되었습니다.' });
     } catch (error) {
       if (error instanceof HttpException) {
-        res.status(error.status).json({ message: error.message });
+        res.status(error.status).json({ success: false, message: error.message });
       } else {
-        res.status(500).json({ message: '투표 중 오류가 발생했습니다.' });
+        res.status(500).json({ success: false, message: '투표 중 오류가 발생했습니다.' });
       }
     }
   };
@@ -97,10 +111,14 @@ export class PostController {
       const userId = req.user!.id;
       const dto: VoteDto = req.body;
 
-      const post = await this.postService.cancelVote(id, userId, dto);
-      res.json(post);
+      await this.postService.cancelVote(id, userId, dto);
+      res.json({ success: true, message: '투표가 정상적으로 취소되었습니다.' });
     } catch (error) {
-      res.status(500).json({ message: '투표 취소 중 오류가 발생했습니다.' });
+      if (error instanceof HttpException) {
+        res.status(error.status).json({ success: false, message: error.message });
+      } else {
+        res.status(500).json({ success: false, message: '투표 취소 중 오류가 발생했습니다.' });
+      }
     }
   };
 }

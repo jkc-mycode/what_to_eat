@@ -4,12 +4,11 @@ import { AuthService } from '../services/auth.service';
 import {
   SignUpRequestDTO,
   AuthenticatedRequest,
-  ApiResponse,
-  ErrorResponseDTO,
   SignUpResponseDTO,
   AuthResponseDTO,
 } from '../types/auth.types';
 import { JwtService } from '../services/jwt.service';
+import { ApiResponse, ErrorResponseDTO } from '../types/common.types';
 
 export class AuthController {
   constructor(

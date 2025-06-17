@@ -19,11 +19,6 @@ export interface AuthenticatedRequest extends Request {
 }
 
 // Response DTO
-export interface ApiResponse<T = any> {
-  success: boolean;
-  message?: string;
-  data?: T;
-}
 export interface SignUpResponseDTO {
   user: UserEntity;
 }
@@ -31,11 +26,4 @@ export interface AuthResponseDTO {
   user: UserEntity;
   accessToken: string;
   refreshToken: string;
-}
-
-// Error Response DTO
-export interface ErrorResponseDTO {
-  success: false;
-  message: string;
-  error?: string;
 }
