@@ -457,6 +457,7 @@ export class PostService {
       isPoll: post.isPoll,
       isPollActive: post.isPollActive,
       pollExpiresAt: post.pollExpiresAt,
+      totalVotes: post.votes.reduce((sum, vote) => sum + vote.userVotes.length, 0),
     };
   }
 }
