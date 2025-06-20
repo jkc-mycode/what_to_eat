@@ -701,6 +701,7 @@ body {
 
 .auth-btn:hover {
   background-color: #2563eb;
+  color: white;
 }
 
 /* Responsive adjustments for auth pages */

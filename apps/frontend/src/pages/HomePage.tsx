@@ -84,8 +84,6 @@ const HomePage: React.FC = () => {
 
       const apiResponse: ApiResponse<PostsResponse> = await response.json();
 
-      console.log(apiResponse);
-
       if (apiResponse.success) {
         setPosts(apiResponse.data.posts);
         setTotalPages(apiResponse.data.totalPages);
@@ -128,38 +126,6 @@ const HomePage: React.FC = () => {
     if (activeTab === 'Closed' && !post.isPollActive) return true;
     return false;
   });
-
-  // 투표하기 함수
-  const handleVote = async (postId: string, voteId: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('로그인이 필요합니다.');
-        return;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/post/${postId}/vote`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ voteId }),
-      });
-
-      if (response.ok) {
-        // 투표 성공 시 게시물 목록 새로고침
-        fetchPosts(currentPage, searchQuery);
-        alert('투표가 완료되었습니다!');
-      } else {
-        const errorData = await response.json();
-        alert(errorData.message || '투표에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('투표 실패:', error);
-      alert('투표 중 오류가 발생했습니다.');
-    }
-  };
 
   if (loading) {
     return (
@@ -290,28 +256,6 @@ const HomePage: React.FC = () => {
                         <span className="poll-card-status closed">Closed</span>
                       )}
                     </div>
-                    {/* 투표 옵션별 버튼 */}
-                    {post.votes && post.votes.length > 0 && (
-                      <div className="poll-votes">
-                        {post.votes.map((vote) => (
-                          <div key={vote.id} className="vote-option">
-                            <span>{vote.text}</span>
-                            <span>
-                              {vote.voteCount}표 ({vote.percentage}%)
-                            </span>
-                            {post.isPollActive && (
-                              <button
-                                className="poll-card-btn vote"
-                                onClick={() => handleVote(post.id, vote.id)}
-                                disabled={vote.userVoted}
-                              >
-                                {vote.userVoted ? '투표됨' : '투표'}
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
