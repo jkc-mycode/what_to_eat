@@ -143,7 +143,10 @@ const HomePage: React.FC = () => {
         <div className="header-container">
           <div className="header-left">
             <div className="logo">
-              <div className="logo-icon"></div>&nbsp;
+              <div className="logo-icon">
+                <span>?</span>
+              </div>
+              &nbsp;
               <span className="logo-text">What To Eat?</span>
             </div>
             <nav className="nav">

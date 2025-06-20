@@ -96,6 +96,17 @@ body {
   background-color: #1f2937;
   border-radius: 0.25rem;
   transform: rotate(45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon span {
+  transform: rotate(-45deg);
+  color: white;
+  font-weight: bold;
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 .logo-text {
