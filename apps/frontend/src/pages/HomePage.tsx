@@ -3,6 +3,7 @@
 import type React from 'react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 // 백엔드 API 응답 타입
 interface VoteResponse {
@@ -54,6 +55,9 @@ const HomePage: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // AuthContext에서 상태와 함수 가져오기
+  const { user, isAuthenticated, logout } = useAuth();
 
   // API 기본 URL
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -153,12 +157,16 @@ const HomePage: React.FC = () => {
               <Link to="/" className="nav-link active">
                 Home
               </Link>
-              <a href="#" className="nav-link">
-                Create Poll
-              </a>
-              <a href="#" className="nav-link">
-                My Polls
-              </a>
+              {isAuthenticated && (
+                <>
+                  <Link to="/create-poll" className="nav-link">
+                    Create Poll
+                  </Link>
+                  <Link to="/my-polls" className="nav-link">
+                    My Polls
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
 
@@ -170,18 +178,29 @@ const HomePage: React.FC = () => {
               </svg>
               <input type="text" placeholder="Search" className="search-input" />
             </div>
-            <button className="notification-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-              </svg>
-            </button>
-            <div className="avatar">
-              <img src="/placeholder.svg?height=32&width=32" alt="User" />
-            </div>
-            <Link to="/login" className="auth-btn">
-              Login
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <button className="notification-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                  </svg>
+                </button>
+                <div className="avatar">
+                  <span>{user?.nickname?.[0]}</span>
+                </div>
+                <div className="user-menu">
+                  <span>{user?.nickname}님</span>
+                  <button onClick={logout} className="logout-btn">
+                    로그아웃
+                  </button>
+                </div>
+              </>
+            ) : (
+              <Link to="/login" className="auth-btn">
+                Login
+              </Link>
+            )}
           </div>
         </div>
       </header>

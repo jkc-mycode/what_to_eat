@@ -16,8 +16,20 @@ import postRoutes from './routes/post.routes';
 const app = express();
 const SERVER_PORT = process.env.SERVER_PORT || 3000;
 
+// CORS 설정 - credentials: 'include'와 호환되도록 설정
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === 'production'
+        ? process.env.FRONTEND_URL || 'https://your-production-domain.com'
+        : 'http://localhost:5173', // 개발 환경에서 프론트엔드 URL
+    credentials: true, // 쿠키를 포함한 요청 허용
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
 // 미들웨어
-app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 

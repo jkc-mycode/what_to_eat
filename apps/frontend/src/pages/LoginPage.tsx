@@ -2,13 +2,17 @@
 
 import type React from 'react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+  const [error, setError] = useState<string>('');
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -18,10 +22,21 @@ const LoginPage: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 로그인 로직 구현
-    console.log('Login attempt:', formData);
+    setError('');
+
+    try {
+      await login(formData);
+      // 로그인 성공 시 메인 페이지로 이동
+      navigate('/');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('알 수 없는 오류가 발생했습니다.');
+      }
+    }
   };
 
   return (
@@ -40,6 +55,8 @@ const LoginPage: React.FC = () => {
           <h1 className="auth-title">로그인</h1>
           <p className="auth-subtitle">계정에 로그인하여 음식 투표에 참여하세요</p>
         </div>
+
+        {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">

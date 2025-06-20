@@ -25,5 +25,4 @@ export interface SignUpResponseDTO {
 export interface AuthResponseDTO {
   user: UserEntity;
   accessToken: string;
-  refreshToken: string;
 }

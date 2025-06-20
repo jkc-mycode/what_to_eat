@@ -28,17 +28,17 @@ export const authenticateJWT = (req: Request, res: Response, next: NextFunction)
 // Refresh Token 검증 미들웨어
 export const authenticateRefreshToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
+    // 헤더 대신 쿠키에서 Refresh Token을 가져옴
+    const refreshToken = req.cookies.refreshToken;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!refreshToken) {
       res.status(401).json({
         success: false,
-        message: 'Refresh Token이 필요합니다.',
+        message: 'Refresh Token이 필요합니다. 다시 로그인해주세요.',
       });
       return;
     }
 
-    const refreshToken = authHeader.substring(7);
     const jwtService = new JwtService();
 
     // Refresh Token 검증

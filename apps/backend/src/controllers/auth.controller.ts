@@ -91,18 +91,26 @@ export class AuthController {
       }
 
       try {
-        // JWT 토큰 생성 (JwtService 통해서)
+        // JWT 토큰 생성
         const { accessToken, refreshToken } = await this.jwtService.generateTokens(user.id);
+
+        // Refresh Token은 httpOnly 쿠키로 설정
+        res.cookie('refreshToken', refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production', // https에서만 쿠키 전송
+          sameSite: 'strict', // 같은 사이튜에서만 쿠키 전송
+          maxAge: 1000 * 60 * 60 * 24 * 7, // 7일
+        });
 
         const { password: _, ...userWithoutPassword } = user;
 
+        // Access Token만 JSON으로 전송
         const successResponse: ApiResponse<AuthResponseDTO> = {
           success: true,
           message: '로그인이 완료되었습니다.',
           data: {
             user: userWithoutPassword,
             accessToken,
-            refreshToken,
           },
         };
         res.json(successResponse);
@@ -149,14 +157,22 @@ export class AuthController {
     try {
       const user = req.user as any;
       // 새로운 토큰 쌍 생성
-      const tokens = await this.jwtService.generateTokens(user.id);
+      const { accessToken, refreshToken } = await this.jwtService.generateTokens(user.id);
 
+      // 새로운 Refresh Token을 httpOnly 쿠키로 설정
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7일
+      });
+
+      // 새로운 Access Token만 JSON으로 전송
       const successResponse: ApiResponse = {
         success: true,
         message: '토큰이 갱신되었습니다.',
         data: {
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
+          accessToken,
         },
       };
       res.json(successResponse);
@@ -204,7 +220,7 @@ export class AuthController {
     }
   };
 
-  // 로그아웃 (Access Token으로 사용자 확인)
+  // 로그아웃
   signOut = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user?.id;
@@ -241,6 +257,9 @@ export class AuthController {
 
       // 리프레시 토큰 무효화
       await this.jwtService.revokeAllTokens(userId);
+
+      // 쿠키 제거
+      res.clearCookie('refreshToken');
 
       const successResponse: ApiResponse = {
         success: true,
