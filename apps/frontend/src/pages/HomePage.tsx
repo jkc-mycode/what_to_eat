@@ -3,7 +3,7 @@
 import type React from 'react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import Header from '../components/Header';
 
 // 백엔드 API 응답 타입
 interface VoteResponse {
@@ -55,9 +55,6 @@ const HomePage: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
-  // AuthContext에서 상태와 함수 가져오기
-  const { user, isAuthenticated, logout } = useAuth();
 
   // API 기본 URL
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -142,68 +139,7 @@ const HomePage: React.FC = () => {
 
   return (
     <>
-      {/* Navigation Header */}
-      <header className="header">
-        <div className="header-container">
-          <div className="header-left">
-            <div className="logo">
-              <div className="logo-icon">
-                <span>?</span>
-              </div>
-              &nbsp;
-              <span className="logo-text">What To Eat?</span>
-            </div>
-            <nav className="nav">
-              <Link to="/" className="nav-link active">
-                Home
-              </Link>
-              {isAuthenticated && (
-                <>
-                  <Link to="/create-poll" className="nav-link">
-                    Create Poll
-                  </Link>
-                  <Link to="/my-polls" className="nav-link">
-                    My Polls
-                  </Link>
-                </>
-              )}
-            </nav>
-          </div>
-
-          <div className="header-right">
-            <div className="search-container">
-              <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.35-4.35"></path>
-              </svg>
-              <input type="text" placeholder="Search" className="search-input" />
-            </div>
-            {isAuthenticated ? (
-              <>
-                <button className="notification-btn">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                  </svg>
-                </button>
-                <div className="avatar">
-                  <span>{user?.nickname?.[0]}</span>
-                </div>
-                <div className="user-menu">
-                  <span>{user?.nickname}님</span>
-                  <button onClick={logout} className="logout-btn">
-                    로그아웃
-                  </button>
-                </div>
-              </>
-            ) : (
-              <Link to="/login" className="auth-btn">
-                Login
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="main">
@@ -257,30 +193,32 @@ const HomePage: React.FC = () => {
             </div>
           ) : (
             filteredPosts.map((post) => (
-              <div key={post.id} className="poll-card">
-                <div className="poll-card-content">
-                  <div className="poll-card-info">
-                    <div className="poll-card-title">{post.title}</div>
-                    <div className="poll-card-meta">
-                      <span className="poll-card-votes">{post.totalVotes || 0} votes</span>
-                      <span className="poll-card-dot">•</span>
-                      {post.isPoll &&
-                        post.isPollActive &&
-                        post.pollExpiresAt &&
-                        (() => {
-                          const msLeft = new Date(post.pollExpiresAt).getTime() - Date.now();
-                          const daysLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
-                          return (
-                            <span className="poll-card-status active">{daysLeft} days left</span>
-                          );
-                        })()}
-                      {post.isPoll && !post.isPollActive && (
-                        <span className="poll-card-status closed">Closed</span>
-                      )}
+              <Link key={post.id} to={`/post/${post.id}`} className="poll-card-link">
+                <div className="poll-card">
+                  <div className="poll-card-content">
+                    <div className="poll-card-info">
+                      <div className="poll-card-title">{post.title}</div>
+                      <div className="poll-card-meta">
+                        <span className="poll-card-votes">{post.totalVotes || 0} votes</span>
+                        <span className="poll-card-dot">•</span>
+                        {post.isPoll &&
+                          post.isPollActive &&
+                          post.pollExpiresAt &&
+                          (() => {
+                            const msLeft = new Date(post.pollExpiresAt).getTime() - Date.now();
+                            const daysLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
+                            return (
+                              <span className="poll-card-status active">{daysLeft} days left</span>
+                            );
+                          })()}
+                        {post.isPoll && !post.isPollActive && (
+                          <span className="poll-card-status closed">Closed</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))
           )}
         </div>
