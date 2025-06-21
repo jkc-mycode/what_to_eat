@@ -24,7 +24,7 @@ const Header: React.FC = () => {
             </Link>
             {isAuthenticated && (
               <>
-                <Link to="/create-poll" className="nav-link">
+                <Link to="/create-post" className="nav-link">
                   Create Poll
                 </Link>
                 <Link to="/my-polls" className="nav-link">

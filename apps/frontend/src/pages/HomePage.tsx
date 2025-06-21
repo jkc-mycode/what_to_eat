@@ -4,6 +4,7 @@ import type React from 'react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
+import { getTimeLeft } from '../utils/date.util';
 
 // 백엔드 API 응답 타입
 interface VoteResponse {
@@ -205,14 +206,24 @@ const HomePage: React.FC = () => {
                           post.isPollActive &&
                           post.pollExpiresAt &&
                           (() => {
-                            const msLeft = new Date(post.pollExpiresAt).getTime() - Date.now();
-                            const daysLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
-                            return (
-                              <span className="poll-card-status active">{daysLeft} days left</span>
-                            );
+                            const timeLeft = getTimeLeft(post.pollExpiresAt);
+                            if (timeLeft) {
+                              const daysMatch = timeLeft.match(/(\d+)일/);
+                              const daysLeft = daysMatch ? parseInt(daysMatch[1]) : 0;
+                              return (
+                                <span className="poll-card-status active">
+                                  {daysLeft} days left
+                                </span>
+                              );
+                            }
+                            // 시간이 만료되었거나 null인 경우
+                            return <span className="poll-card-status closed">Closed</span>;
                           })()}
                         {post.isPoll && !post.isPollActive && (
                           <span className="poll-card-status closed">Closed</span>
+                        )}
+                        {post.isPoll && post.isPollActive && !post.pollExpiresAt && (
+                          <span className="poll-card-status active">Active</span>
                         )}
                       </div>
                     </div>

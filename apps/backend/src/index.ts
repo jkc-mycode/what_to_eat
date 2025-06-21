@@ -24,7 +24,7 @@ app.use(
         ? process.env.FRONTEND_URL || 'https://your-production-domain.com'
         : 'http://localhost:5173', // 개발 환경에서 프론트엔드 URL
     credentials: true, // 쿠키를 포함한 요청 허용
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );

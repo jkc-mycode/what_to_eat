@@ -6,6 +6,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { apiFetch } from '../services/api.service';
 import Header from '../components/Header';
+import { formatKstDate, getTimeLeft } from '../utils/date.util';
 
 // 투표 옵션 타입
 interface VoteOption {
@@ -38,12 +39,13 @@ interface PostDetail {
 const PostDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const [post, setPost] = useState<PostDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [voting, setVoting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // 게시물 상세 정보 가져오기
   const fetchPostDetail = async () => {
@@ -91,6 +93,30 @@ const PostDetailPage: React.FC = () => {
     }
   };
 
+  // 게시물 삭제
+  const handleDelete = async () => {
+    if (!post) return;
+
+    if (!window.confirm('정말로 이 게시물을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await apiFetch(`/post/${id}`, {
+        method: 'DELETE',
+      });
+
+      alert('게시물이 성공적으로 삭제되었습니다.');
+      navigate('/');
+    } catch (error: unknown) {
+      console.error('게시물 삭제 실패:', error);
+      alert(error instanceof Error ? error.message : '게시물 삭제에 실패했습니다.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   useEffect(() => {
     if (id) {
       fetchPostDetail();
@@ -119,26 +145,14 @@ const PostDetailPage: React.FC = () => {
   }
 
   const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return formatKstDate(date);
   };
 
-  const getTimeLeft = () => {
-    if (!post.pollExpiresAt) return null;
-    const msLeft = new Date(post.pollExpiresAt).getTime() - Date.now();
-    if (msLeft <= 0) return null;
-
-    const days = Math.floor(msLeft / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((msLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-    if (days > 0) return `${days}일 ${hours}시간 남음`;
-    return `${hours}시간 남음`;
+  const getTimeLeftForPoll = () => {
+    return getTimeLeft(post.pollExpiresAt);
   };
+
+  const isAuthor = user?.id === post.author.id;
 
   return (
     <div className="post-detail-page">
@@ -149,16 +163,40 @@ const PostDetailPage: React.FC = () => {
         <article className="post-detail-article">
           {/* 게시물 헤더 */}
           <header className="post-detail-article-header">
-            <h1 className="post-detail-title">{post.title}</h1>
-            <div className="post-detail-meta">
-              <span className="post-detail-author">작성자: {post.author.nickname}</span>
-              <span className="post-detail-date">작성일: {formatDate(post.createdAt)}</span>
-              {post.isPoll && (
-                <span className={`post-detail-status ${post.isPollActive ? 'active' : 'closed'}`}>
-                  {post.isPollActive ? '투표 진행 중' : '투표 종료'}
-                </span>
-              )}
+            <div className="post-detail-header-content">
+              <h1 className="post-detail-title">{post.title}</h1>
+              <div className="post-detail-meta">
+                <span className="post-detail-author">작성자: {post.author.nickname}</span>
+                <span className="post-detail-date">작성일: {formatDate(post.createdAt)}</span>
+                {post.isPoll && (
+                  <span className={`post-detail-status ${post.isPollActive ? 'active' : 'closed'}`}>
+                    {post.isPollActive ? '투표 진행 중' : '투표 종료'}
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* 작성자만 수정/삭제 버튼 표시 */}
+            {isAuthor && (
+              <div className="post-detail-actions">
+                <Link to={`/post/${id}/edit`} className="edit-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                  수정
+                </Link>
+                <button onClick={handleDelete} className="delete-btn" disabled={deleting}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="3,6 5,6 21,6"></polyline>
+                    <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                  {deleting ? '삭제 중...' : '삭제'}
+                </button>
+              </div>
+            )}
           </header>
 
           {/* 게시물 내용 */}
@@ -172,7 +210,7 @@ const PostDetailPage: React.FC = () => {
               <div className="poll-header">
                 <h3 className="poll-title">투표</h3>
                 {post.isPollActive && post.pollExpiresAt && (
-                  <span className="poll-timer">{getTimeLeft()}</span>
+                  <span className="poll-timer">{getTimeLeftForPoll()}</span>
                 )}
                 <span className="poll-total-votes">총 {post.totalVotes}표</span>
               </div>
