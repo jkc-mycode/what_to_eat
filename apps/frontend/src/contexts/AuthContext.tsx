@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { loginApi, getProfileApi, refreshTokenApi, logoutApi } from '../services/auth.service';
 import { User, LoginCredentials, ApiError } from '../types/auth.types';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -17,6 +18,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -56,6 +59,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     initializeAuth();
   }, []);
+
+  // 페이지 이동 시 토큰 유효성 검사
+  useEffect(() => {
+    const checkToken = async () => {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) return;
+      try {
+        await getProfileApi();
+      } catch (error: unknown) {
+        if (
+          error &&
+          typeof error === 'object' &&
+          'status' in error &&
+          (error as { status?: number }).status === 401
+        ) {
+          alert('로그인 세션이 만료되었습니다. 다시 로그인 해주세요.');
+          cleanupAuth();
+          navigate('/login');
+        }
+      }
+    };
+    checkToken();
+  }, [location.pathname]);
 
   const login = async (credentials: LoginCredentials) => {
     const response = await loginApi(credentials);
