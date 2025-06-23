@@ -33,7 +33,6 @@ export class PostController {
       const limit = parseInt(req.query.limit as string) || 10;
 
       const result = await this.postService.getPosts(page, limit);
-      console.log(result);
       res.json({ success: true, data: result });
     } catch (error) {
       res.status(500).json({ success: false, message: '게시물 목록 조회 중 오류가 발생했습니다.' });

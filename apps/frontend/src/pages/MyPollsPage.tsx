@@ -61,8 +61,6 @@ const MyPollsPage: React.FC = () => {
     (post) => post.isPoll && post.votes && post.votes.some((vote) => vote.userVoted)
   );
 
-  console.log(posts);
-
   const renderPostCard = (post: PostResponse) => (
     <Link key={post.id} to={`/post/${post.id}`} className="poll-card-link">
       <div className="poll-card">
