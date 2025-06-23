@@ -17,7 +17,7 @@ export class JwtService {
       id: userId,
       type: 'access',
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 60, // 30분
+      exp: Math.floor(Date.now() / 1000) + 30 * 60, // 30분
     };
 
     return jwt.sign(payload, this.accessSecret);
