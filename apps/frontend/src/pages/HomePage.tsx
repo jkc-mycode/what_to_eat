@@ -122,10 +122,13 @@ const HomePage: React.FC = () => {
   };
 
   // 탭 필터링 (클라이언트 사이드)
+  const now = new Date();
   const filteredPosts = posts.filter((post) => {
     if (activeTab === 'All') return true;
-    if (activeTab === 'Active' && post.isPollActive) return true;
-    if (activeTab === 'Closed' && !post.isPollActive) return true;
+    if (activeTab === 'Active')
+      return post.isPollActive && (!post.pollExpiresAt || new Date(post.pollExpiresAt) > now);
+    if (activeTab === 'Closed')
+      return !post.isPollActive || (post.pollExpiresAt && new Date(post.pollExpiresAt) <= now);
     return false;
   });
 
