@@ -31,14 +31,6 @@ interface PostResponse {
   userVoted?: boolean;
 }
 
-interface PostsResponse {
-  posts: PostResponse[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
 const MyPollsPage: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'written' | 'voted'>('written');
@@ -68,6 +60,8 @@ const MyPollsPage: React.FC = () => {
   const myVotedPosts = posts.filter(
     (post) => post.isPoll && post.votes && post.votes.some((vote) => vote.userVoted)
   );
+
+  console.log(posts);
 
   const renderPostCard = (post: PostResponse) => (
     <Link key={post.id} to={`/post/${post.id}`} className="poll-card-link">

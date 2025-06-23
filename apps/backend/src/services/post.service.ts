@@ -460,4 +460,35 @@ export class PostService {
       totalVotes: post.votes.reduce((sum, vote) => sum + vote.userVotes.length, 0),
     };
   }
+
+  async getVotedPosts(userId: string): Promise<PostsResponse> {
+    // 1. 내가 투표한 vote의 postId 목록 조회
+    const userVotes = await this.prisma.userVote.findMany({
+      where: { userId },
+      select: { vote: { select: { postId: true } } },
+    });
+    const postIds = [...new Set(userVotes.map((uv) => uv.vote.postId))];
+
+    // 2. 해당 postId의 게시물 목록 조회 (votes, author 등 포함)
+    const posts = await this.prisma.post.findMany({
+      where: { id: { in: postIds } },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: { select: { id: true, nickname: true } },
+        votes: {
+          include: {
+            userVotes: { include: { user: { select: { id: true } } } },
+          },
+        },
+      },
+    });
+
+    return {
+      posts: posts.map((post) => this.formatPostListResponse(post)),
+      total: posts.length,
+      page: 1,
+      limit: posts.length,
+      totalPages: 1,
+    };
+  }
 }

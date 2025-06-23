@@ -27,4 +27,7 @@ router.post('/:id/vote', authenticateJWT, postController.vote as any);
 // 투표 취소 (인증 필요)
 router.delete('/:id/vote', authenticateJWT, postController.cancelVote as any);
 
+// 내가 투표한 게시물 목록 조회 (인증 필요)
+router.get('/voted', authenticateJWT, postController.getVotedPosts as any);
+
 export default router;
