@@ -37,6 +37,7 @@ const MyPollsPage: React.FC = () => {
   const [posts, setPosts] = useState<PostResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [myVotedPosts, setMyVotedPosts] = useState<PostResponse[]>([]);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -56,10 +57,23 @@ const MyPollsPage: React.FC = () => {
 
   // 내가 작성한 게시물
   const myWrittenPosts = posts.filter((post) => post.author.id === user?.id);
-  // 내가 투표한 게시물
-  const myVotedPosts = posts.filter(
-    (post) => post.isPoll && post.votes && post.votes.some((vote) => vote.userVoted)
-  );
+  // 내가 투표한 게시물 API 호출 (탭 전환 시)
+  useEffect(() => {
+    if (activeTab !== 'voted') return;
+    const fetchVotedPosts = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const response = await apiFetch('/post/voted');
+        setMyVotedPosts(response.data.posts);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : '투표한 게시물 목록을 불러오지 못했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVotedPosts();
+  }, [activeTab]);
 
   const renderPostCard = (post: PostResponse) => (
     <Link key={post.id} to={`/post/${post.id}`} className="poll-card-link">
