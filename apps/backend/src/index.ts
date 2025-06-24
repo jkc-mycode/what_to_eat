@@ -12,6 +12,7 @@ import { prisma } from './utils/prisma.util';
 import './config/passport.config'; // Passport 설정 초기화
 import authRoutes from './routes/auth.routes';
 import postRoutes from './routes/post.routes';
+import './scheduler/poll-expiry.scheduler';
 
 const app = express();
 const SERVER_PORT = process.env.SERVER_PORT || 3000;
