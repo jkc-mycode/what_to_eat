@@ -208,14 +208,26 @@ export class PostService {
   }
 
   // 게시물 목록 조회
-  async getPosts(page: number = 1, limit: number = 10): Promise<PostsResponse> {
+  async getPosts(page: number = 1, limit: number = 10, search?: string): Promise<PostsResponse> {
     const skip = (page - 1) * limit;
+
+    // 검색 조건 추가
+    const condition = search
+      ? {
+          OR: [
+            // 대소문자 구분없이 검색
+            { title: { contains: search } },
+            { content: { contains: search } },
+          ],
+        }
+      : undefined;
 
     const [posts, total] = await Promise.all([
       this.prisma.post.findMany({
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        where: condition,
         include: {
           author: {
             select: {

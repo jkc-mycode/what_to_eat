@@ -106,14 +106,12 @@ const HomePage: React.FC = () => {
     fetchPosts(1, searchQuery);
   }, []);
 
-  // 검색어 변경 시 API 호출
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
+  // 엔터 입력 시 검색 실행 함수 추가
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
       fetchPosts(1, searchQuery);
-    }, 500); // 500ms 딜레이로 디바운싱
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+    }
+  };
 
   // 페이지 변경 시 API 호출
   const handlePageChange = (page: number) => {
@@ -166,6 +164,7 @@ const HomePage: React.FC = () => {
               placeholder="Search for polls"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
               className="search-bar-input"
             />
           </div>

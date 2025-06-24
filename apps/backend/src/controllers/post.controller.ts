@@ -31,10 +31,12 @@ export class PostController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
+      const search = req.query.search as string | undefined;
 
-      const result = await this.postService.getPosts(page, limit);
+      const result = await this.postService.getPosts(page, limit, search);
       res.json({ success: true, data: result });
     } catch (error) {
+      console.log(error);
       res.status(500).json({ success: false, message: '게시물 목록 조회 중 오류가 발생했습니다.' });
     }
   };
