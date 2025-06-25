@@ -18,8 +18,8 @@ export const formatKstDate = (
   date: Date | string,
   options?: Intl.DateTimeFormatOptions
 ): string => {
-  const kstDate = utcToKst(date);
-  return kstDate.toLocaleDateString('ko-KR', {
+  const d = new Date(date);
+  return d.toLocaleDateString('ko-KR', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

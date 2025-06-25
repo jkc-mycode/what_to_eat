@@ -4,7 +4,7 @@ import type React from 'react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
-import { getTimeLeft } from '../utils/date.util';
+import { formatKstDate, getTimeLeft } from '../utils/date.util';
 
 // 백엔드 API 응답 타입
 interface VoteResponse {
@@ -229,18 +229,7 @@ const HomePage: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <div className="poll-card-date">
-                      {new Date(post.createdAt).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })}{' '}
-                      {new Date(post.createdAt).toLocaleTimeString('ko-KR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false,
-                      })}
-                    </div>
+                    <div className="poll-card-date">{formatKstDate(post.createdAt)}</div>
                   </div>
                 </div>
               </Link>
