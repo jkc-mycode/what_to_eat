@@ -229,6 +229,18 @@ const HomePage: React.FC = () => {
                         )}
                       </div>
                     </div>
+                    <div className="poll-card-date">
+                      {new Date(post.createdAt).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}{' '}
+                      {new Date(post.createdAt).toLocaleTimeString('ko-KR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false,
+                      })}
+                    </div>
                   </div>
                 </div>
               </Link>
