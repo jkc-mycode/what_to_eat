@@ -9,6 +9,7 @@ import PostDetailPage from './pages/PostDetailPage';
 import CreatePostPage from './pages/CreatePostPage';
 import EditPostPage from './pages/EditPostPage';
 import MyPollsPage from './pages/MyPollsPage';
+import KakaoCallbackPage from './pages/KakaoCallbackPage';
 import './App.css';
 
 const App: React.FC = () => {
@@ -22,6 +23,7 @@ const App: React.FC = () => {
         <Route path="/post/:id/edit" element={<EditPostPage />} />
         <Route path="/create-post" element={<CreatePostPage />} />
         <Route path="/my-polls" element={<MyPollsPage />} />
+        <Route path="/kakao-callback" element={<KakaoCallbackPage />} />
       </Routes>
     </div>
   );

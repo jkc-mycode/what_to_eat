@@ -137,7 +137,18 @@ export class AuthController {
       // JWT 토큰 생성 (JwtService 통해서)
       const { accessToken, refreshToken } = await this.jwtService.generateTokens(user.id);
 
-      res.json({ accessToken, refreshToken });
+      // Refresh Token은 httpOnly 쿠키로 저장
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7일
+      });
+
+      // 프론트엔드 콜백 URL로 accessToken을 쿼리스트링으로 리다이렉트
+      const frontendCallbackUrl =
+        process.env.KAKAO_FRONTEND_CALLBACK_URL || 'http://localhost:5173/kakao-callback';
+      res.redirect(`${frontendCallbackUrl}?accessToken=${accessToken}`);
     } catch (error) {
       console.error('카카오 콜백 처리 에러:', error);
       if (error instanceof Error) {
